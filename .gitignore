@@ -1,0 +1,12 @@
+# Secrets, anywhere in the repo (Vite also reads .env.local and friends)
+.env
+.env.*
+!.env.example
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
