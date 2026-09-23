@@ -22,3 +22,6 @@ data/transform/
 .pytest_cache/
 .ruff_cache/
 .quota/
+
+# Notes and plans stay local
+*.md
