@@ -17,8 +17,6 @@ wheels/
 # Generated artifacts
 *_graph.png
 test_schema_details.txt
-data/extract/
-data/transform/
 .pytest_cache/
 .ruff_cache/
 .quota/
