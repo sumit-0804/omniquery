@@ -5,12 +5,12 @@ from langgraph.types import interrupt
 
 from agents.registry import AGENT_KEYS, REGISTRY
 from Models.schema import DataAgentSchema, build_router_schema
-from utils.laya_router import decide
+from utils.jev_router import AMBIGUOUS, decide, route_question
 from utils.llm_pick import pick_llm, text_of
 
-# Laya is only trusted when it is very sure: in the routing eval no wrong pick reached 0.80,
-# but many right and wrong picks sat between 0.55 and 0.75. Below this, the LLM decides.
-LAYA_TRUST = 0.80
+# Jev decides alone only at or above this: in the Laya/Jev comparison no wrong pick reached
+# 0.80 while most right ones did. Below it, the LLM decides.
+JEV_TRUST = 0.80
 
 SYSTEM_PROMPT = f"""
 You are an expert data engineer. Read the user's request and decide which agent handles it.
@@ -20,15 +20,10 @@ Answer with one of: {", ".join(AGENT_KEYS)}, or "unclear".
   reasonably mean more than one of the above. Then also give one short question that would
   settle it, and say in one sentence why it is unclear.
 A request to save, export or write data to a file is etl, even when the data comes from the database.
+A request to plot, chart, graph or visualize data is chart. Asking for numbers without a visual is sql.
 """
 
-ROUTE_QUESTIONS = {
-    "route": {
-        "type": "choice",
-        "instructions": "Which data agent should handle this request?",
-        "criteria": {key: spec.description for key, spec in REGISTRY.items()},
-    },
-}
+ROUTE_QUESTIONS = route_question({key: spec.description for key, spec in REGISTRY.items()})
 
 
 def router_node(state: DataAgentSchema) -> dict:
@@ -38,14 +33,19 @@ def router_node(state: DataAgentSchema) -> dict:
     try:
         decision = decide(message, ROUTE_QUESTIONS)
     except Exception as error:
-        # Laya is local, but the model can still fail to load (no weights, no memory).
-        print(f"Laya routing failed ({error}), using the LLM router")
+        # Jev needs the network and an OpenRouter key; without them the LLM decides.
+        print(f"Jev routing failed ({error}), using the LLM router")
         return llm_route(message)
 
-    if decision["confidence"] >= LAYA_TRUST:
-        return {"route_response": decision["route"], "route_confidence": decision["confidence"],
-                "route_source": "laya"}
-    return llm_route(message)
+    if decision["confidence"] < JEV_TRUST:
+        return llm_route(message)
+    if decision["route"] == AMBIGUOUS:
+        # Clearly vague: ask the user straight away rather than spend an LLM call.
+        return {"route_response": "", "route_confidence": decision["confidence"], "route_source": "jev",
+                "clarify_question": "Which of these should handle your request?",
+                "clarify_why": "The request is too vague to act on as written. Ask me if you're not sure."}
+    return {"route_response": decision["route"], "route_confidence": decision["confidence"],
+            "route_source": "jev"}
 
 
 def llm_route(message: str) -> dict:
@@ -133,7 +133,8 @@ def make_agent_node(key: str):
         # Looked up at call time, so tests can swap an agent's graph.
         spec = REGISTRY[key]
         result = spec.graph.invoke(spec.build_input(state.messages[-1].content, state.source_id))
-        return {"messages": [AIMessage(content=spec.extract_answer(result))]}
+        extra = spec.extract_extra(result) if spec.extract_extra else {}
+        return {"messages": [AIMessage(content=spec.extract_answer(result))], **extra}
 
     return node
 

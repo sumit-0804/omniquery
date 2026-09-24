@@ -3,7 +3,7 @@
     uv run python evals/run_routing_eval.py
 
 Messages labelled "clarify" are vague on purpose: the right outcome is asking the user.
-Laya decides alone only above LAYA_TRUST; below it this makes one LLM call per message.
+Jev decides alone only at JEV_TRUST or above; below it this makes one LLM call per message.
 """
 
 import argparse
@@ -19,7 +19,7 @@ from langchain_core.messages import HumanMessage
 from agents.data_agent import ROUTE_QUESTIONS, route_edge, router_node
 from agents.registry import REGISTRY
 from Models.schema import DataAgentSchema
-from utils.laya_router import decide
+from utils.jev_router import decide
 
 MESSAGES = Path(__file__).resolve().parent / "routing.json"
 _LABEL_OF_NODE = {spec.node_name: key for key, spec in REGISTRY.items()} | {"ask_human": "clarify"}
@@ -35,7 +35,7 @@ def main() -> int:
     argparse.ArgumentParser(description=__doc__).parse_args()
 
     items = json.loads(MESSAGES.read_text(encoding="utf-8"))
-    decide("warm up", ROUTE_QUESTIONS)  # load the model before timing anything
+    decide("warm up", ROUTE_QUESTIONS)  # open the connection before timing anything
 
     by_label: dict[str, list[bool]] = defaultdict(list)
     sources, seconds, conf_right, conf_wrong = Counter(), [], [], []
@@ -46,7 +46,7 @@ def main() -> int:
         right = got == item["label"]
         by_label[item["label"]].append(right)
         sources[update["route_source"]] += 1
-        if update["route_source"] == "laya":
+        if update["route_source"] == "jev":
             (conf_right if right else conf_wrong).append(update["route_confidence"])
         print(f"  {'ok  ' if right else 'MISS'} {item['label']:<8} -> {got:<8} "
               f"{update['route_source']:<5} conf {update.get('route_confidence', 0):.2f}  "
@@ -58,7 +58,7 @@ def main() -> int:
         print(f"  {label:<8} {sum(results)}/{len(results)}")
     print("decided by " + ", ".join(f"{k} {v}" for k, v in sources.most_common()))
     if conf_right:
-        print(f"laya confidence  right {statistics.mean(conf_right):.2f}"
+        print(f"jev confidence  right {statistics.mean(conf_right):.2f}"
               + (f", wrong {statistics.mean(conf_wrong):.2f}" if conf_wrong else ""))
     print(f"p50 latency {statistics.median(seconds) * 1000:.0f} ms")
     return 0
