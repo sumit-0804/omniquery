@@ -4,7 +4,8 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from utils.config import PROJECT_ROOT
 
@@ -23,6 +24,9 @@ class Quota:
     # Daily usage cap, counted in `unit`: tokens, or neurons for Cloudflare Workers AI.
     tpd: int = 10**12
     unit: str = "tokens"
+    # Where the provider's day starts: Gemini resets at midnight Pacific, Cloudflare at
+    # midnight UTC. Counting from local midnight would be off by hours either way.
+    reset_tz: str = "UTC"
 
 
 class UsageMeter:
@@ -38,12 +42,16 @@ class UsageMeter:
         self._lock = threading.Lock()
         self._requests: deque[float] = deque()
         self._tokens: deque[tuple[float, int]] = deque()
+        ZoneInfo(quota.reset_tz)  # fail at startup on a bad zone, not mid-request
         # Model ids such as "openai/gpt-oss-120b" are not valid file names.
         self._state_path = _STATE_DIR / f"{re.sub(r'[^A-Za-z0-9_.-]', '_', name)}.json"
         self._day, self._day_requests, self._day_tokens = self._load()
 
+    def _today(self) -> str:
+        return datetime.now(ZoneInfo(self.quota.reset_tz)).date().isoformat()
+
     def _load(self) -> tuple[str, int, int]:
-        today = date.today().isoformat()
+        today = self._today()
         try:
             saved = json.loads(self._state_path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
@@ -66,7 +74,7 @@ class UsageMeter:
             pass
 
     def _roll_day(self) -> None:
-        today = date.today().isoformat()
+        today = self._today()
         if today != self._day:
             self._day, self._day_requests, self._day_tokens = today, 0, 0
 
