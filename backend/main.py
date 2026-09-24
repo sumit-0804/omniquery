@@ -162,7 +162,34 @@ def _manage(args) -> int | None:
     return None
 
 
+def serve(argv: list[str]) -> int:
+    """Run the web API (and the built React app, if present) on this machine only."""
+    import threading
+    import webbrowser
+
+    import uvicorn
+
+    p = argparse.ArgumentParser(prog="omniquery serve")
+    p.add_argument("--port", type=int, default=7666)
+    p.add_argument("--no-browser", action="store_true")
+    args = p.parse_args(argv)
+
+    from api.app import FRONTEND_DIST
+
+    url = f"http://127.0.0.1:{args.port}"
+    if not FRONTEND_DIST.is_dir():
+        print(f"No built frontend at {FRONTEND_DIST}; serving the API only ({url}/api/docs).")
+    elif not args.no_browser:
+        threading.Timer(1.5, webbrowser.open, [url]).start()
+    # Loopback only: nothing else on the network can reach the app.
+    uvicorn.run("api.app:app", host="127.0.0.1", port=args.port)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["serve"]:
+        return serve(argv[1:])
     args = _parser().parse_args(argv)
     managed = _manage(args)
     if managed is not None:

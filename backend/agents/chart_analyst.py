@@ -147,7 +147,7 @@ def heuristic_choice(columns: list[str], kinds: dict[str, str]) -> dict:
     return {"mark": mark, "x": x, "y": y, "color": color, "title": ""}
 
 
-def _json_value(value):
+def json_value(value):
     if isinstance(value, Decimal):
         return float(value)
     if isinstance(value, float):
@@ -184,7 +184,7 @@ def build_spec(columns: list[str], rows: list[list], kinds: dict[str, str], choi
         "title": {"text": title, "subtitle": note} if note else title,
         "width": "container",
         "height": 320,
-        "data": {"values": [{c: _json_value(v) for c, v in zip(columns, row, strict=True)} for row in rows]},
+        "data": {"values": [{c: json_value(v) for c, v in zip(columns, row, strict=True)} for row in rows]},
         "mark": {"type": mark, "tooltip": True},
         "encoding": encoding,
     }

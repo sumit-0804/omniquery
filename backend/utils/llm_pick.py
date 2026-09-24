@@ -268,20 +268,21 @@ def pick_llm(level: str, temperature: float = 0.0, tools: list | None = None):
     return built[0] if len(built) == 1 else built[0].with_fallbacks(built[1:])
 
 
-def text_of(message) -> str:
-    """Plain text from a reply. Gemini returns content blocks, others return a string."""
+def text_of(message, strip: bool = True) -> str:
+    """Plain text from a reply. Gemini returns content blocks, others return a string.
+
+    strip=False keeps edge spaces, which streamed pieces of one answer need.
+    """
     accessor = getattr(message, "text", None)
     if isinstance(accessor, str):
-        return accessor.strip()
-    if callable(accessor):
-        return accessor().strip()
-
-    content = message.content
-    if isinstance(content, str):
-        return content.strip()
-    return "".join(
-        block.get("text", "") for block in content if isinstance(block, dict)
-    ).strip()
+        text = accessor
+    elif callable(accessor):
+        text = accessor()
+    elif isinstance(message.content, str):
+        text = message.content
+    else:
+        text = "".join(block.get("text", "") for block in message.content if isinstance(block, dict))
+    return text.strip() if strip else text
 
 
 def usage_report() -> list[dict]:

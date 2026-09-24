@@ -28,6 +28,10 @@ EXPORT_TIMEOUT_S = 120.0
 _CATALOG_CACHE: dict[tuple, dict] = {}
 
 
+def clear_catalog_cache() -> None:
+    _CATALOG_CACHE.clear()
+
+
 def quote_ident(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
 

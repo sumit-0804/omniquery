@@ -333,6 +333,16 @@ def list_outputs() -> list[dict]:
 
 # ---- Opening ----
 
+def refresh_source(ref: str) -> Result[dict]:
+    """Drop cached catalogs and read the source's tables again."""
+    from utils.duck import clear_catalog_cache
+
+    clear_schema_cache()
+    clear_catalog_cache()
+    db = open_source(ref)
+    return db.value.schema_catalog() if db else db
+
+
 def open_source(ref: str) -> Result:
     """A connector for the source: dialect, schema_catalog(), explain_sql(), execute_sql().
 
