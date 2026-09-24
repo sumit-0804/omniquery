@@ -166,5 +166,45 @@
   {
     "message": "how many users are there per city?",
     "label": "sql"
+  },
+  {
+    "message": "plot the number of completed rides per month in 2025",
+    "label": "chart"
+  },
+  {
+    "message": "bar chart of total revenue by payment method",
+    "label": "chart"
+  },
+  {
+    "message": "show me a graph of daily ride requests",
+    "label": "chart"
+  },
+  {
+    "message": "visualize the average fare by city",
+    "label": "chart"
+  },
+  {
+    "message": "chart the cancellation reasons",
+    "label": "chart"
+  },
+  {
+    "message": "draw a line chart of monthly revenue",
+    "label": "chart"
+  },
+  {
+    "message": "can I see a histogram-like chart of ride distances by bucket?",
+    "label": "chart"
+  },
+  {
+    "message": "plot fare against distance for completed rides",
+    "label": "chart"
+  },
+  {
+    "message": "what is the monthly revenue?",
+    "label": "sql"
+  },
+  {
+    "message": "which city has the highest average fare?",
+    "label": "sql"
   }
 ]

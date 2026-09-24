@@ -18,7 +18,7 @@ def test_several_sources_and_no_choice_lists_them(capsys):
 
 def test_with_no_sources_the_question_goes_to_the_workspace(monkeypatch):
     asked = []
-    monkeypatch.setattr(main, "ask", lambda q, source_id: asked.append(source_id) or "ok")
+    monkeypatch.setattr(main, "ask", lambda q, source_id, **kw: asked.append(source_id) or "ok")
 
     assert main.main(["fetch https://example.com/data.json"]) == 0
     assert asked == ["workspace"]
@@ -28,7 +28,7 @@ def test_the_named_source_is_the_one_asked(monkeypatch):
     _add("rides")
     _add("fleet")
     asked = []
-    monkeypatch.setattr(main, "ask", lambda q, source_id: asked.append((q, source_id)) or "ok")
+    monkeypatch.setattr(main, "ask", lambda q, source_id, **kw: asked.append((q, source_id)) or "ok")
 
     assert main.main(["--source", "fleet", "how", "many?"]) == 0
     assert asked == [("how many?", "fleet")]
@@ -50,3 +50,14 @@ def test_notes_from_the_cli(capsys):
 
     assert main.main(["--note", "rides", "vehicles.make", "manufacturer"]) == 0
     assert sources.get_source("rides").value["notes"] == {"vehicles.make": "manufacturer"}
+
+
+def test_a_chart_is_saved_as_a_page_that_cannot_break_out_of_its_script():
+    spec = {"title": "Rides </script><b>", "mark": "bar", "data": {"values": [{"a": "</script>"}]}}
+    path = main.save_chart(spec)
+
+    page = path.read_text(encoding="utf-8")
+    assert path.parent == sources.home() / "charts"
+    assert page.count("</script>") == 4  # the three library tags and the embed tag, nothing from the data
+    assert "vegaEmbed" in page
+

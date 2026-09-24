@@ -14,22 +14,9 @@ def _postgres_up() -> bool:
         return False
 
 
-def _laya_cached() -> bool:
-    # Scan rather than try_to_load_from_cache: Laya pins a revision, so there is no refs/main.
-    from huggingface_hub import scan_cache_dir
-
-    from utils.laya_router import LAYA_MODEL
-
-    try:
-        return any(r.repo_id == LAYA_MODEL for r in scan_cache_dir().repos)
-    except Exception:
-        return False
-
-
 def pytest_collection_modifyitems(config, items):
     checks = {
         "integration": (_postgres_up, "Postgres with the demo data is not reachable"),
-        "laya": (_laya_cached, "Laya weights are not downloaded yet"),
     }
     for marker, (available, reason) in checks.items():
         marked = [item for item in items if marker in item.keywords]
@@ -41,6 +28,7 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(autouse=True)
 def _no_real_llm(monkeypatch):
     # A test that reaches a real provider spends quota and passes or fails on the network.
+    import agents.chart_analyst
     import agents.data_agent
     import agents.etl_analyst
     import agents.sql_analyst
@@ -48,7 +36,7 @@ def _no_real_llm(monkeypatch):
     def refuse(*args, **kwargs):
         raise AssertionError("a test tried to call a real LLM; patch pick_llm with a fake")
 
-    for module in (agents.sql_analyst, agents.etl_analyst, agents.data_agent):
+    for module in (agents.sql_analyst, agents.etl_analyst, agents.data_agent, agents.chart_analyst):
         monkeypatch.setattr(module, "pick_llm", refuse)
 
 

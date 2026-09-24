@@ -121,8 +121,9 @@ def generate_sql(state: AgentSchema) -> dict:
     {_DIALECT_NAME.get(state.sql_dialect, state.sql_dialect)} SQL query that can be executed
     directly on the database. You are given the schema details, including table names,
     column names, data types, sample rows and notes written by the user.
-    Unless the user asks for a specific number of rows, limit the output to {ROW_LIMIT} rows.
+    Unless the user asks for a specific number of rows, limit the output to {state.row_limit} rows.
     Output only the raw SQL statement. No explanation, no markdown, no backticks.
+    {_chart_grain(state.row_limit)}
 
     User's question: {state.user_question}
 
@@ -143,6 +144,19 @@ def generate_sql(state: AgentSchema) -> dict:
     }
 
 
+def _chart_grain(row_limit: int) -> str:
+    # Only callers that need more than ROW_LIMIT rows (the chart route) get this guidance.
+    if row_limit <= ROW_LIMIT:
+        return ""
+    return f"""
+    The result feeds a chart, so return the points to draw, not raw rows:
+    - For a trend over time, group by a time unit that gives at most {row_limit} points
+      (day, then week, then month as the date range grows).
+    - For a comparison of categories, return the top 25 by value, sorted.
+    - Return one row per point: the label or date column first, then the value column(s).
+    """
+
+
 def _strip_sql_fences(sql: str) -> str:
     sql = (sql or "").strip()
     if not sql.startswith("```"):
@@ -159,7 +173,7 @@ def _strip_sql_fences(sql: str) -> str:
 
 def readonly_check(state: AgentSchema) -> dict:
 
-    result = check_readonly(state.generated_sql_query, ROW_LIMIT, dialect=state.sql_dialect)
+    result = check_readonly(state.generated_sql_query, state.row_limit, dialect=state.sql_dialect)
     if not result:
         return {"is_safe": "No", "comments": result.error}
 
@@ -270,52 +284,52 @@ def validation_edge(state: AgentSchema) -> str:
     return _retry_or_fail(state) if state.error_code else "execute_sql"
 
 
-def execution_edge(state: AgentSchema) -> str:
-    if state.error_code:
-        return _retry_or_fail(state)
-    # An empty result already produced its own answer.
-    return "end" if state.final_answer else "represent_final_answer"
+def build_graph(answer_node: str, answer_fn):
+    """The SQL pipeline with `answer_fn` as its last step. The chart agent reuses it."""
+
+    def execution_edge(state: AgentSchema) -> str:
+        if state.error_code:
+            return _retry_or_fail(state)
+        # An empty result already produced its own answer.
+        return "end" if state.final_answer else answer_node
+
+    graph = StateGraph(AgentSchema)
+
+    graph.add_node("prompt_query_context", prompt_query_context)
+    graph.add_node("generate_sql", generate_sql)
+    graph.add_node("check_readonly", readonly_check)
+    graph.add_node("canceled_sql", canceled_sql)
+    graph.add_node("validate_sql", validate_sql)
+    graph.add_node("execute_sql", execute_sql)
+    graph.add_node("report_failure", report_failure)
+    graph.add_node(answer_node, answer_fn)
+
+    graph.add_edge(START, "prompt_query_context")
+    graph.add_conditional_edges(
+        "prompt_query_context", schema_edge,
+        {"report_failure": "report_failure", "generate_sql": "generate_sql"},
+    )
+    graph.add_edge("generate_sql", "check_readonly")
+    graph.add_conditional_edges(
+        "check_readonly", readonly_edge,
+        {"validate_sql": "validate_sql", "canceled_sql": "canceled_sql"},
+    )
+    graph.add_conditional_edges(
+        "validate_sql", validation_edge,
+        {"generate_sql": "generate_sql", "report_failure": "report_failure", "execute_sql": "execute_sql"},
+    )
+    graph.add_conditional_edges(
+        "execute_sql", execution_edge,
+        {"generate_sql": "generate_sql", "report_failure": "report_failure", answer_node: answer_node, "end": END},
+    )
+    graph.add_edge("canceled_sql", END)
+    graph.add_edge("report_failure", END)
+    graph.add_edge(answer_node, END)
+
+    return graph.compile()
 
 
-sql_agent_graph = StateGraph(AgentSchema)
-
-sql_agent_graph.add_node("prompt_query_context", prompt_query_context)
-sql_agent_graph.add_node("generate_sql", generate_sql)
-sql_agent_graph.add_node("check_readonly", readonly_check)
-sql_agent_graph.add_node("canceled_sql", canceled_sql)
-sql_agent_graph.add_node("validate_sql", validate_sql)
-sql_agent_graph.add_node("execute_sql", execute_sql)
-sql_agent_graph.add_node("report_failure", report_failure)
-sql_agent_graph.add_node("represent_final_answer", represent_final_answer)
-
-sql_agent_graph.add_edge(START, "prompt_query_context")
-sql_agent_graph.add_conditional_edges(
-    "prompt_query_context", schema_edge,
-    {"report_failure": "report_failure", "generate_sql": "generate_sql"},
-)
-sql_agent_graph.add_edge("generate_sql", "check_readonly")
-sql_agent_graph.add_conditional_edges(
-    "check_readonly", readonly_edge,
-    {"validate_sql": "validate_sql", "canceled_sql": "canceled_sql"},
-)
-sql_agent_graph.add_conditional_edges(
-    "validate_sql", validation_edge,
-    {"generate_sql": "generate_sql", "report_failure": "report_failure", "execute_sql": "execute_sql"},
-)
-sql_agent_graph.add_conditional_edges(
-    "execute_sql", execution_edge,
-    {
-        "generate_sql": "generate_sql",
-        "report_failure": "report_failure",
-        "represent_final_answer": "represent_final_answer",
-        "end": END,
-    },
-)
-sql_agent_graph.add_edge("canceled_sql", END)
-sql_agent_graph.add_edge("report_failure", END)
-sql_agent_graph.add_edge("represent_final_answer", END)
-
-sql_analyst = sql_agent_graph.compile()
+sql_analyst = build_graph("represent_final_answer", represent_final_answer)
 
 
 if __name__ == "__main__":

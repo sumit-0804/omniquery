@@ -26,6 +26,11 @@ class AgentSchema(BaseModel):
     final_answer: str = Field(default="", description="Answer returned to the user")
     error_code: str = Field(default="", description="Machine-readable failure code, empty on success")
     error_detail: str = Field(default="", description="Human-readable failure detail")
+    row_limit: int = Field(default=25, description="LIMIT added when the SQL has none; charts raise it")
+    chart_spec: dict | None = Field(default=None, description="Vega-Lite spec, when a chart was drawn")
+    chart_error: str = Field(default="", description="chart.* code when no chart could be drawn")
+    chart_error_detail: str = Field(default="", description="Why no chart was drawn")
+    chart_note: str = Field(default="", description="Caveat shown with the chart, e.g. rows were cut off")
 
 
 class ETLAgentSchema(BaseModel):
@@ -49,11 +54,14 @@ class DataAgentSchema(BaseModel):
     source_id: str = Field(..., description="Saved source the question is about")
     route_response: str = Field(default="", description="Which sub-agent the router picked")
     route_confidence: float = Field(default=0.0, description="Router confidence, 0 to 1")
-    route_source: str = Field(default="", description="Who decided: laya, llm or human")
+    route_source: str = Field(default="", description="Who decided: jev, llm or human")
     clarify_question: str = Field(default="", description="What to ask the user when the route is unclear")
     clarify_why: str = Field(default="", description="Why the route is unclear")
     clarify_explanation: str = Field(default="", description="Plain explanation shown when the user asked for help")
     clarify_rounds: int = Field(default=0, description="Times the user asked for help instead of choosing")
+    chart_spec: dict | None = Field(default=None, description="Vega-Lite spec from the chart agent")
+    chart_error: str = Field(default="", description="chart.* code when no chart could be drawn")
+    chart_note: str = Field(default="", description="Caveat shown with the chart")
 
 
 def build_router_schema(keys: tuple[str, ...]) -> type[BaseModel]:

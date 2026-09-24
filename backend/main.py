@@ -1,10 +1,11 @@
 import argparse
 import sys
+from pathlib import Path
 
 from utils import sources
 
 
-def ask(question: str, source_id: str) -> str:
+def ask(question: str, source_id: str, open_chart: bool = False) -> str:
     import uuid
 
     from langchain_core.messages import HumanMessage
@@ -17,7 +18,46 @@ def ask(question: str, source_id: str) -> str:
     # The router paused to ask the user; answer it and resume the same run.
     while result.get("__interrupt__"):
         result = data_agent.invoke(Command(resume=_choose(result["__interrupt__"][0].value)), config)
-    return result["messages"][-1].content
+
+    answer = result["messages"][-1].content
+    if result.get("chart_spec"):
+        path = save_chart(result["chart_spec"])
+        answer += f"\n\nChart: {path}"
+        if open_chart:
+            import webbrowser
+
+            webbrowser.open(path.as_uri())
+    elif result.get("chart_error"):
+        answer += f"\n\n(No chart: {result['chart_error']})"
+    return answer
+
+
+_CHART_PAGE = """<!doctype html>
+<html><head><meta charset="utf-8"><title>{title}</title>
+<script src="https://cdn.jsdelivr.net/npm/vega@6"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@6"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@7"></script>
+<style>body {{ font-family: system-ui, sans-serif; margin: 24px; }} #chart {{ width: 100%; }}</style>
+</head><body><div id="chart"></div>
+<script>vegaEmbed("#chart", {spec});</script>
+</body></html>
+"""
+
+
+def save_chart(spec: dict) -> Path:
+    """Write the spec as a standalone HTML page, until the web UI renders charts itself."""
+    import html
+    import json
+    from datetime import datetime
+
+    folder = sources.home() / "charts"
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f"{datetime.now():%Y%m%d-%H%M%S-%f}.html"
+    title = spec["title"]["text"] if isinstance(spec.get("title"), dict) else spec.get("title", "Chart")
+    # "</" would end the script tag early if a value contained "</script>".
+    payload = json.dumps(spec).replace("</", "<\\/")
+    path.write_text(_CHART_PAGE.format(title=html.escape(str(title)), spec=payload), encoding="utf-8")
+    return path
 
 
 def _choose(prompt: dict) -> str:
@@ -40,6 +80,7 @@ def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="omniquery", description="Ask questions about your data.")
     p.add_argument("question", nargs="*", help="question to ask; omit for an interactive prompt")
     p.add_argument("--source", metavar="NAME", help="saved source to ask about")
+    p.add_argument("--open", action="store_true", help="open charts in the browser")
     p.add_argument("--sources", action="store_true", help="list saved sources")
     p.add_argument("--outputs", action="store_true", help="list files saved by extracts and transforms")
     p.add_argument("--add-source", nargs=2, metavar=("NAME", "URL"), help="save a Postgres connection")
@@ -133,7 +174,7 @@ def main(argv: list[str] | None = None) -> int:
     source_id = source.value["id"]
 
     if args.question:
-        print(ask(" ".join(args.question), source_id))
+        print(ask(" ".join(args.question), source_id, open_chart=args.open))
         return 0
 
     print(f"OmniQuery on {source.value['name']}. Ask a question, or press Ctrl-C to quit.")
@@ -144,7 +185,7 @@ def main(argv: list[str] | None = None) -> int:
             print()
             return 0
         if question:
-            print(ask(question, source_id))
+            print(ask(question, source_id, open_chart=args.open))
 
 
 if __name__ == "__main__":
