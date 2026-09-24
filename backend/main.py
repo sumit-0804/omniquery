@@ -1,21 +1,142 @@
+import argparse
 import sys
 
-from langchain_core.messages import HumanMessage
-
-from agents.data_agent import data_agent
+from utils import sources
 
 
-def ask(question: str) -> str:
-    result = data_agent.invoke({"messages": [HumanMessage(content=question)]})
+def ask(question: str, source_id: str) -> str:
+    import uuid
+
+    from langchain_core.messages import HumanMessage
+    from langgraph.types import Command
+
+    from agents.data_agent import data_agent
+
+    config = {"configurable": {"thread_id": uuid.uuid4().hex}}
+    result = data_agent.invoke({"messages": [HumanMessage(content=question)], "source_id": source_id}, config)
+    # The router paused to ask the user; answer it and resume the same run.
+    while result.get("__interrupt__"):
+        result = data_agent.invoke(Command(resume=_choose(result["__interrupt__"][0].value)), config)
     return result["messages"][-1].content
 
 
-def main() -> int:
-    if len(sys.argv) > 1:
-        print(ask(" ".join(sys.argv[1:])))
+def _choose(prompt: dict) -> str:
+    """Show the router's question and return the user's raw reply; the agent interprets it."""
+    if prompt.get("explanation"):
+        print(f"\n{prompt['explanation']}")
+    else:
+        print(f"\n{prompt['question']}")
+        if prompt.get("why"):
+            print(f"({prompt['why']})")
+    for n, option in enumerate(prompt["options"], 1):
+        print(f"  {n}. {option['key']}: {option['label']}")
+    try:
+        return input("Pick a number, ask a question if you're not sure, or press Enter to cancel: ")
+    except (EOFError, KeyboardInterrupt):
+        return ""
+
+
+def _parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(prog="omniquery", description="Ask questions about your data.")
+    p.add_argument("question", nargs="*", help="question to ask; omit for an interactive prompt")
+    p.add_argument("--source", metavar="NAME", help="saved source to ask about")
+    p.add_argument("--sources", action="store_true", help="list saved sources")
+    p.add_argument("--outputs", action="store_true", help="list files saved by extracts and transforms")
+    p.add_argument("--add-source", nargs=2, metavar=("NAME", "URL"), help="save a Postgres connection")
+    p.add_argument("--schema", default="public", help="schema for --add-source (default: public)")
+    p.add_argument("--add-files", nargs="+", metavar="NAME FILE", help="save files (csv, parquet, json) as a source")
+    p.add_argument("--remove-source", metavar="NAME", help="delete a saved source")
+    p.add_argument("--note", nargs=3, metavar=("NAME", "PATH", "TEXT"),
+                   help='note on "table" or "table.column"; empty TEXT removes it')
+    return p
+
+
+def _fail(result) -> int:
+    print(result.error, file=sys.stderr)
+    return 2 if result.code == "source.ambiguous" else 1
+
+
+def _describe(s: dict) -> str:
+    if s["kind"] == "files":
+        where = f"files   {len(s['tables'])} tables: {', '.join(s['tables'])}"
+    else:
+        where = f"postgres  {sources.masked(s['url'])}  schema {s['schema']}"
+        where += "" if s["readonly"] else "  (account can write)"
+    notes = f"  {len(s['notes'])} notes" if s["notes"] else ""
+    return f"{s['name']:<16} {where}{notes}"
+
+
+def _manage(args) -> int | None:
+    """Run a source command, or return None when the arguments are a question."""
+    if args.sources:
+        saved = sources.list_sources()
+        print("\n".join(_describe(s) for s in saved) if saved else "No sources saved yet.")
         return 0
 
-    print("OmniQuery. Ask a question, or press Ctrl-C to quit.")
+    if args.outputs:
+        outputs = sources.list_outputs()
+        for o in outputs:
+            print(f"{o['name']:<32} {o['bytes'] / 1024:>9,.1f} KB  table {o['table'] or '-'}")
+        print(f"\n{len(outputs)} files in {sources.outputs_dir()}" if outputs else "No outputs yet.")
+        return 0
+
+    if args.add_source:
+        name, url = args.add_source
+        result = sources.add_postgres(name, url, args.schema)
+        if not result:
+            return _fail(result)
+        m = result.meta
+        print(f"Saved {name}: {m['tables']} tables, Postgres {m['version']}, {m['latency_ms']} ms.")
+        if not m["readonly"]:
+            print("\nWarning: this account can change data. OmniQuery only ever runs read-only"
+                  "\ntransactions, but a read-only role is safer:\n\n" + sources.readonly_role_sql(args.schema))
+        return 0
+
+    if args.add_files:
+        if len(args.add_files) < 2:
+            print("--add-files needs a name and at least one file.", file=sys.stderr)
+            return 1
+        name, *paths = args.add_files
+        result = sources.add_files(name, paths)
+        if not result:
+            return _fail(result)
+        print(f"Saved {name}: {', '.join(result.value['tables'])}.")
+        return 0
+
+    if args.remove_source:
+        result = sources.remove_source(args.remove_source)
+        if not result:
+            return _fail(result)
+        print(f"Removed {result.value['name']}.")
+        return 0
+
+    if args.note:
+        name, path, text = args.note
+        result = sources.set_note(name, path, text)
+        if not result:
+            return _fail(result)
+        print(f"Saved note on {path}." if text.strip() else f"Removed note on {path}.")
+        return 0
+
+    return None
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    managed = _manage(args)
+    if managed is not None:
+        return managed
+
+    source = sources.resolve(args.source)
+    if not source:
+        return _fail(source)
+    source_id = source.value["id"]
+
+    if args.question:
+        print(ask(" ".join(args.question), source_id))
+        return 0
+
+    print(f"OmniQuery on {source.value['name']}. Ask a question, or press Ctrl-C to quit.")
     while True:
         try:
             question = input("\n> ").strip()
@@ -23,7 +144,7 @@ def main() -> int:
             print()
             return 0
         if question:
-            print(ask(question))
+            print(ask(question, source_id))
 
 
 if __name__ == "__main__":

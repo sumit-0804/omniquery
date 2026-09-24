@@ -2,8 +2,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from langchain_core.messages import HumanMessage
-
 from agents.etl_analyst import etl_analyst
 from agents.sql_analyst import sql_analyst
 from utils.llm_pick import text_of
@@ -14,7 +12,7 @@ class AgentSpec:
     key: str
     description: str
     graph: Any
-    build_input: Callable[[str], dict]
+    build_input: Callable[[str, str], dict]  # (message, source_id)
     extract_answer: Callable[[dict], str]
 
     @property
@@ -34,15 +32,18 @@ REGISTRY: dict[str, AgentSpec] = {
             key="sql",
             description="Query, aggregate, or analyse data already stored in the database",
             graph=sql_analyst,
-            build_input=lambda message: {"user_question": message},
+            build_input=lambda message, source_id: {"user_question": message, "source_id": source_id},
             extract_answer=lambda result: result.get("final_answer") or _last_message(result),
         ),
         AgentSpec(
             key="etl",
-            description="Extract data from an API or file, transform it, or load it somewhere",
+            description=(
+                "Extract data from a URL or API, or transform data (filter, reshape, clean, "
+                "join, convert) and save the result as a new file"
+            ),
             graph=etl_analyst,
-            build_input=lambda message: {"messages": [HumanMessage(content=message)]},
-            extract_answer=_last_message,
+            build_input=lambda message, source_id: {"user_request": message, "source_id": source_id},
+            extract_answer=lambda result: result.get("final_answer") or "The ETL agent returned no answer.",
         ),
     )
 }
