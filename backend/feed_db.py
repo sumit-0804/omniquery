@@ -258,6 +258,11 @@ def main():
         for table_name, columns in TABLE_COLUMNS.items():
             load_csv(cursor, table_name, f"{table_name}.csv", columns)
 
+        # Fresh statistics, so the SQL agent sees row counts and complete value lists
+        # straight away instead of waiting for autovacuum.
+        for table_name in TABLE_COLUMNS:
+            cursor.execute(sql.SQL("ANALYZE {}").format(sql.Identifier("public", table_name)))
+
         print()
         print("Record counts:")
         print("-" * 40)

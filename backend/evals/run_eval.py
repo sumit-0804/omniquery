@@ -6,6 +6,7 @@ compares the rows with the gold SQL's rows.
     uv run python evals/run_eval.py                  # full run
     uv run python evals/run_eval.py --only q07,q15   # a subset
     uv run python evals/run_eval.py --check-gold     # validate gold SQL only, no LLM calls
+    uv run python evals/run_eval.py --source rides-files   # another saved source
 """
 
 import argparse
@@ -17,9 +18,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-from psycopg2 import sql as psql
-
-from utils.database import DatabaseUtil
+from utils.sources import open_source, resolve
 
 EVAL_DIR = Path(__file__).resolve().parent
 QUESTIONS = EVAL_DIR / "questions.json"
@@ -30,15 +29,13 @@ MAX_GOLD_ROWS = 25
 MAX_DECIMALS = 2
 
 
-def fetch(query: str, schema: str | None) -> tuple[list[str], list[tuple]]:
-    # Deliberately not DatabaseUtil.execute_sql: its return shape changes between
-    # checkpoints, and the eval must measure every checkpoint the same way.
-    with DatabaseUtil()._cursor(readonly=True) as cur:
-        if schema:
-            cur.execute(psql.SQL("SET LOCAL search_path = {}").format(psql.Identifier(schema)))
-        cur.execute(query)
-        columns = [d[0] for d in cur.description] if cur.description else []
-        return columns, cur.fetchmany(1001)
+def fetch(query: str, source_id: str) -> tuple[list[str], list[tuple]]:
+    result = open_source(source_id)
+    if result:
+        result = result.value.execute_sql(query)
+    if not result:
+        raise RuntimeError(f"{result.code}: {result.error}")
+    return result.value["columns"], [tuple(r) for r in result.value["rows"]]
 
 
 def _as_decimal(value) -> Decimal | None:
@@ -114,22 +111,20 @@ def results_match(gold: tuple[list, list], agent: tuple[list, list]) -> bool:
     return search(0, ())
 
 
-def llm_calls_so_far() -> int:
+def llm_calls_so_far() -> Counter:
     from utils.llm_pick import usage_report
 
-    return sum(row["rpd_used"] for row in usage_report())
+    return Counter({row["provider"]: row["rpd_used"] for row in usage_report()})
 
 
-def run_question(item: dict, schema: str | None) -> dict:
+def run_question(item: dict, source_id: str) -> dict:
     from agents.sql_analyst import sql_analyst
 
     record = {"id": item["id"], "tags": item["tags"], "question": item["question"]}
-    gold = fetch(item["gold_sql"], schema)
+    gold = fetch(item["gold_sql"], source_id)
 
     calls_before, started = llm_calls_so_far(), time.time()
-    agent_input = {"user_question": item["question"]}
-    if schema:
-        agent_input["schema_name"] = schema
+    agent_input = {"user_question": item["question"], "source_id": source_id}
     try:
         state = sql_analyst.invoke(agent_input)
     except Exception as exc:
@@ -137,7 +132,9 @@ def run_question(item: dict, schema: str | None) -> dict:
         return record
     finally:
         record["seconds"] = round(time.time() - started, 1)
-        record["llm_calls"] = llm_calls_so_far() - calls_before
+        # Which providers served this question: the mix varies run to run when Gemini is overloaded.
+        record["providers"] = dict(llm_calls_so_far() - calls_before)
+        record["llm_calls"] = sum(record["providers"].values())
 
     record["sql"] = state.get("generated_sql_query", "")
     record["answer"] = state.get("final_answer", "")
@@ -152,7 +149,7 @@ def run_question(item: dict, schema: str | None) -> dict:
         return record
 
     try:
-        agent = fetch(record["sql"], schema)
+        agent = fetch(record["sql"], source_id)
     except Exception as exc:
         record.update(outcome="error", detail=f"re-execute failed: {exc}"[:300])
         return record
@@ -163,11 +160,11 @@ def run_question(item: dict, schema: str | None) -> dict:
     return record
 
 
-def check_gold(items: list[dict], schema: str | None) -> int:
+def check_gold(items: list[dict], source_id: str) -> int:
     problems = 0
     for item in items:
         try:
-            _, rows = fetch(item["gold_sql"], schema)
+            _, rows = fetch(item["gold_sql"], source_id)
         except Exception as exc:
             print(f"  FAIL  {item['id']}  {exc}")
             problems += 1
@@ -184,9 +181,15 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--only", help="comma-separated question ids")
     parser.add_argument("--limit", type=int)
-    parser.add_argument("--schema", help="run against another Postgres schema, e.g. bigdemo")
+    parser.add_argument("--source", help="saved source to run against; default: the only saved one")
     parser.add_argument("--check-gold", action="store_true", help="validate gold SQL; no LLM calls")
     args = parser.parse_args()
+
+    source = resolve(args.source)
+    if not source:
+        print(source.error, file=sys.stderr)
+        return 2
+    source_id = source.value["id"]
 
     items = json.loads(QUESTIONS.read_text(encoding="utf-8"))
     if args.only:
@@ -196,14 +199,16 @@ def main() -> int:
         items = items[: args.limit]
 
     if args.check_gold:
-        return 1 if check_gold(items, args.schema) else 0
+        return 1 if check_gold(items, source_id) else 0
 
     records = []
     for item in items:
-        record = run_question(item, args.schema)
+        record = run_question(item, source_id)
         records.append(record)
+        served = ",".join(f"{p.split('-')[-1] if p.startswith('groq') else p}:{n}"
+                          for p, n in record.get("providers", {}).items())
         print(f"  {record['outcome']:<12} {record['id']}  {record.get('seconds', 0):>5}s  "
-              f"{record.get('llm_calls', 0)} calls  {record.get('detail', '')[:90]}", flush=True)
+              f"{served:<28} {record.get('detail', '')[:80]}", flush=True)
 
     passed = sum(r["outcome"] == "pass" for r in records)
     by_tag: dict[str, list[bool]] = defaultdict(list)
@@ -215,11 +220,13 @@ def main() -> int:
     print(f"\naccuracy  {passed}/{len(records)} = {100 * passed / max(len(records), 1):.0f}%")
     print("outcomes  " + ", ".join(f"{k} {v}" for k, v in outcomes.most_common()))
     print(f"llm calls {sum(r.get('llm_calls', 0) for r in records) / max(len(records), 1):.1f} per question")
+    served = sum((Counter(r.get("providers", {})) for r in records), Counter())
+    print("served by " + ", ".join(f"{p} {n}" for p, n in served.most_common()))
     for tag, results in sorted(by_tag.items()):
         print(f"  {tag:<12} {sum(results)}/{len(results)}")
 
     RESULTS_DIR.mkdir(exist_ok=True)
-    out = RESULTS_DIR / f"{datetime.now():%Y%m%d-%H%M%S}{'-' + args.schema if args.schema else ''}.json"
+    out = RESULTS_DIR / f"{datetime.now():%Y%m%d-%H%M%S}-{source_id}.json"
     out.write_text(json.dumps({"accuracy": passed / max(len(records), 1),
                                "outcomes": dict(outcomes), "records": records},
                               indent=2, default=str), encoding="utf-8")

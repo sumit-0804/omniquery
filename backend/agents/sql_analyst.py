@@ -1,60 +1,146 @@
-from langchain_core.messages import AIMessage, HumanMessage
+import re
+
+from langchain_core.messages import AIMessage
 from langgraph.graph import END, START, StateGraph
 
-from Models.schema import AgentSchema, JudgeSchema
-from utils.database import DatabaseUtil
+from Models.schema import AgentSchema
+from utils.database import format_rows, notes_in, render_schema
 from utils.llm_pick import pick_llm, text_of
+from utils.result import Result
+from utils.sources import open_source
+from utils.sql_guard import check_readonly
+
+# One number for the prompt's default LIMIT, the LIMIT added when the SQL has none,
+# the rows the model reads, and the UI copy.
+ROW_LIMIT = 25
+MAX_SQL_ATTEMPTS = 3
+
+# Above this many tables, one cheap LLM call picks the relevant ones first, so a large
+# database does not flood the prompt. At or below it, every table is sent as is.
+TABLE_SELECTION_THRESHOLD = 15
 
 _FAILURE_MESSAGE = {
     "db.unreachable": "I could not reach the database, so I have no answer for you.",
     "db.query_failed": "The database rejected the generated query.",
     "db.write_rejected": "The generated query tried to modify data. The connection is read-only, so it was refused.",
     "db.schema_failed": "I could not read the database schema, so I could not build a query.",
+    "source.not_found": "That data source is not saved, so I have nothing to query.",
+    "source.empty": "This source has no tables yet. Add files, connect a database, or extract some data first.",
 }
 
-
-def curate_ques(state: AgentSchema) -> dict:
-
-    llm = pick_llm("low")
-
-    response = text_of(llm.invoke(f"""
-    You are a helpful SQL analyst assistant. Rephrase the user's question into a more
-    specific question that can be used to generate a SQL query. Only remove ambiguous
-    words and phrases. Do not answer the question.
-    Here is the user's question: {state.user_question}
-    """))
-
-    return {"curated_ques": response, "messages": [HumanMessage(content=response)]}
+_DIALECT_NAME = {"postgres": "Postgres", "duckdb": "DuckDB"}
 
 
 def prompt_query_context(state: AgentSchema) -> dict:
 
-    schema = DatabaseUtil().schema_details("public")
-    if not schema:
-        return {"error_code": schema.code, "error_detail": schema.error}
+    db = open_source(state.source_id)
+    if not db:
+        return {"error_code": db.code, "error_detail": db.error}
+    catalog = db.value.schema_catalog()
+    if not catalog:
+        return {"error_code": catalog.code, "error_detail": catalog.error}
+
+    names = list(catalog.value["tables"])
+    if not names:
+        return {"error_code": "source.empty", "error_detail": f"{state.source_id} has no tables yet."}
+    selected = (
+        names if len(names) <= TABLE_SELECTION_THRESHOLD
+        else select_tables(state.user_question, catalog.value)
+    )
+    notes = db.meta.get("notes") or {}
+
+    return {
+        "sql_dialect": db.value.dialect,
+        "schema_context": render_schema(catalog.value, selected, notes),
+        "selected_tables": selected,
+        "notes_used": notes_in(catalog.value, selected, notes),
+    }
+
+
+def select_tables(question: str, catalog: dict) -> list[str]:
+    tables = catalog["tables"]
+    lines = []
+    for name, t in tables.items():
+        about = t["comment"] or ", ".join(c["name"] for c in t["columns"][:8])
+        links = f"  (links to: {', '.join(t['references'])})" if t["references"] else ""
+        lines.append(f"- {name}: {about}{links}")
+    table_list = "\n".join(lines)
 
     prompt = f"""
-    You are an SQL analyst agent. Convert the user's natural language query into a
-    Postgres SQL query that can be executed directly on the database. You are given the
-    schema details including table names, column names, data types and sample rows.
-    Unless the user asks for a specific number of rows, limit the output to 10 rows.
-    Output only the raw SQL statement. No explanation, no markdown, no backticks.
+    Pick the database tables needed to answer the question, including any needed for joins.
+    Reply with table names only, one per line, and nothing else.
 
-    User's Query: {state.curated_ques}
+    Question: {question}
 
-    Database Schema Details:
-    {schema.value}
+    Tables:
+    {table_list}
     """
 
-    return {"prompt_query_context": prompt}
+    try:
+        reply = text_of(pick_llm("low").invoke(prompt))
+    except Exception:
+        # Selection only trims the prompt; losing it must not lose the answer.
+        return list(tables)
+
+    picked = _parse_table_names(reply, tables)
+    if not picked:
+        return list(tables)
+
+    # Add the tables the picked ones point to, so a lookup needed for a join is not lost.
+    for name in list(picked):
+        picked.update(tables[name]["references"])
+    return [name for name in tables if name in picked]
+
+
+def _parse_table_names(reply: str, tables: dict) -> set[str]:
+    known = {name.lower(): name for name in tables}
+    found = set()
+    for token in re.split(r"[\s,]+", reply):
+        name = token.strip("`'\"*-.:;()[]").split(".")[-1].lower()
+        if name in known:
+            found.add(known[name])
+    return found
+
+
+def _failures_block(errors: list[dict]) -> str:
+    if not errors:
+        return ""
+    lines = ["Your previous attempts failed. Fix the query."]
+    for e in errors:
+        lines.append(f"attempt {e['attempt']} -> {e['detail']}\n  SQL: {e['sql']}")
+    lines.append("Return only the corrected SQL.")
+    return "\n".join(lines)
 
 
 def generate_sql(state: AgentSchema) -> dict:
 
     llm = pick_llm("medium")
-    generated = _strip_sql_fences(text_of(llm.invoke(state.prompt_query_context)))
 
-    return {"generated_sql_query": generated}
+    prompt = f"""
+    You are an SQL analyst agent. Convert the user's question into one
+    {_DIALECT_NAME.get(state.sql_dialect, state.sql_dialect)} SQL query that can be executed
+    directly on the database. You are given the schema details, including table names,
+    column names, data types, sample rows and notes written by the user.
+    Unless the user asks for a specific number of rows, limit the output to {ROW_LIMIT} rows.
+    Output only the raw SQL statement. No explanation, no markdown, no backticks.
+
+    User's question: {state.user_question}
+
+    Database schema:
+    {state.schema_context}
+
+    {_failures_block(state.sql_errors)}
+    """
+
+    generated = _strip_sql_fences(text_of(llm.invoke(prompt)))
+
+    # Clearing the error matters: a stale one would send a successful retry to report_failure.
+    return {
+        "generated_sql_query": generated,
+        "sql_attempts": state.sql_attempts + 1,
+        "error_code": "",
+        "error_detail": "",
+    }
 
 
 def _strip_sql_fences(sql: str) -> str:
@@ -71,56 +157,75 @@ def _strip_sql_fences(sql: str) -> str:
     return "\n".join(lines).strip()
 
 
-def is_safe_sql(state: AgentSchema) -> dict:
+def readonly_check(state: AgentSchema) -> dict:
 
-    llm = pick_llm("medium")
-    llm_judge = llm.with_structured_output(JudgeSchema, method="json_schema")
+    result = check_readonly(state.generated_sql_query, ROW_LIMIT, dialect=state.sql_dialect)
+    if not result:
+        return {"is_safe": "No", "comments": result.error}
 
-    prompt = f"""
-    You are an SQL judge for data security. Decide whether this SQL query is safe.
-    It must only read data. Answer 'No' if it contains INSERT, UPDATE, DELETE, DROP,
-    ALTER, TRUNCATE, CREATE or anything else that changes the database.
-    Respond 'Yes' if it is safe, otherwise 'No', and explain your decision.
-    SQL query: {state.generated_sql_query}
-    """
-
-    response = llm_judge.invoke(prompt).model_dump()
-
-    return {"is_safe": response["answer"], "comments": response["comments"]}
+    # The checked SQL may carry an added LIMIT, so it replaces the generated text.
+    return {"is_safe": "Yes", "comments": "", "generated_sql_query": result.value}
 
 
 def canceled_sql(state: AgentSchema) -> dict:
 
-    final_answer = (
-        f"The generated SQL query was judged unsafe to execute. "
-        f"Reason: {state.comments}. The query was not run."
-    )
+    final_answer = f"The query was not run because it is not read-only: {state.comments}."
 
     return {"final_answer": final_answer, "messages": [AIMessage(content=final_answer)]}
 
 
+def _failure(state: AgentSchema, result: Result) -> dict:
+    code = result.error.split(":", 1)[0] if result.code == "db.query_failed" else result.code
+    return {
+        "error_code": result.code,
+        "error_detail": result.error,
+        "sql_errors": [{
+            "attempt": state.sql_attempts,
+            "code": code,
+            "detail": result.error,
+            "sql": state.generated_sql_query,
+        }],
+    }
+
+
+def validate_sql(state: AgentSchema) -> dict:
+
+    db = open_source(state.source_id)
+    result = db.value.explain_sql(state.generated_sql_query) if db else db
+    return {} if result else _failure(state, result)
+
+
 def execute_sql(state: AgentSchema) -> dict:
 
-    result = DatabaseUtil().execute_sql(state.generated_sql_query)
+    db = open_source(state.source_id)
+    result = db.value.execute_sql(state.generated_sql_query) if db else db
     if not result:
-        return {"error_code": result.code, "error_detail": result.error}
+        return _failure(state, result)
 
-    if result.meta.get("row_count", 0) == 0:
+    data = result.value
+    update = {
+        "result_columns": data["columns"],
+        "result_rows": data["rows"],
+        "result_row_count": data["row_count"],
+        "result_truncated": data["truncated"],
+    }
+
+    if data["row_count"] == 0:
         # Answered without the LLM, so it cannot invent rows that were not returned.
         answer = "The query ran successfully but returned no rows."
-        return {
-            "sql_query_execution_result": "",
-            "final_answer": answer,
-            "messages": [AIMessage(content=answer)],
-        }
+        update.update(final_answer=answer, messages=[AIMessage(content=answer)])
 
-    return {"sql_query_execution_result": result.value}
+    return update
 
 
 def report_failure(state: AgentSchema) -> dict:
 
     headline = _FAILURE_MESSAGE.get(state.error_code, "The request could not be completed.")
     answer = f"{headline}\n\nDetail ({state.error_code}): {state.error_detail}"
+
+    if len(state.sql_errors) > 1:
+        tried = "\n".join(f"  attempt {e['attempt']}: {e['detail']}" for e in state.sql_errors)
+        answer += f"\n\nTried {len(state.sql_errors)} times:\n{tried}"
 
     return {"final_answer": answer, "messages": [AIMessage(content=answer)]}
 
@@ -135,9 +240,9 @@ def represent_final_answer(state: AgentSchema) -> dict:
     Only state what the result supports. Do not invent numbers.
 
     Query result:
-    {state.sql_query_execution_result}
+    {format_rows(state.result_columns, state.result_rows, ROW_LIMIT)}
 
-    User's question: {state.curated_ques}
+    User's question: {state.user_question}
     """
 
     llm_response = text_of(llm.invoke(prompt))
@@ -145,59 +250,67 @@ def represent_final_answer(state: AgentSchema) -> dict:
     return {"final_answer": llm_response, "messages": [AIMessage(content=llm_response)]}
 
 
-sql_agent_graph = StateGraph(AgentSchema)
-
-sql_agent_graph.add_node("curate_ques", curate_ques)
-sql_agent_graph.add_node("prompt_query_context", prompt_query_context)
-sql_agent_graph.add_node("generate_sql", generate_sql)
-sql_agent_graph.add_node("is_safe_sql", is_safe_sql)
-sql_agent_graph.add_node("canceled_sql", canceled_sql)
-sql_agent_graph.add_node("execute_sql", execute_sql)
-sql_agent_graph.add_node("report_failure", report_failure)
-sql_agent_graph.add_node("represent_final_answer", represent_final_answer)
-
-sql_agent_graph.add_edge(START, "curate_ques")
-sql_agent_graph.add_edge("curate_ques", "prompt_query_context")
+def _retry_or_fail(state: AgentSchema) -> str:
+    # Only a rejected query can improve on another try; an unreachable database
+    # or a refused write fails the same way every time.
+    if state.error_code == "db.query_failed" and state.sql_attempts < MAX_SQL_ATTEMPTS:
+        return "generate_sql"
+    return "report_failure"
 
 
 def schema_edge(state: AgentSchema) -> str:
     return "report_failure" if state.error_code else "generate_sql"
 
 
-sql_agent_graph.add_conditional_edges(
-    "prompt_query_context", schema_edge,
-    {"report_failure": "report_failure", "generate_sql": "generate_sql"},
-)
-
-sql_agent_graph.add_edge("generate_sql", "is_safe_sql")
+def readonly_edge(state: AgentSchema) -> str:
+    return "validate_sql" if state.is_safe == "Yes" else "canceled_sql"
 
 
-def is_safe_sql_edge(state: AgentSchema) -> str:
-    return "execute_sql" if state.is_safe.lower() == "yes" else "canceled_sql"
-
-
-sql_agent_graph.add_conditional_edges(
-    "is_safe_sql", is_safe_sql_edge,
-    {"execute_sql": "execute_sql", "canceled_sql": "canceled_sql"},
-)
+def validation_edge(state: AgentSchema) -> str:
+    return _retry_or_fail(state) if state.error_code else "execute_sql"
 
 
 def execution_edge(state: AgentSchema) -> str:
     if state.error_code:
-        return "report_failure"
+        return _retry_or_fail(state)
     # An empty result already produced its own answer.
     return "end" if state.final_answer else "represent_final_answer"
 
 
+sql_agent_graph = StateGraph(AgentSchema)
+
+sql_agent_graph.add_node("prompt_query_context", prompt_query_context)
+sql_agent_graph.add_node("generate_sql", generate_sql)
+sql_agent_graph.add_node("check_readonly", readonly_check)
+sql_agent_graph.add_node("canceled_sql", canceled_sql)
+sql_agent_graph.add_node("validate_sql", validate_sql)
+sql_agent_graph.add_node("execute_sql", execute_sql)
+sql_agent_graph.add_node("report_failure", report_failure)
+sql_agent_graph.add_node("represent_final_answer", represent_final_answer)
+
+sql_agent_graph.add_edge(START, "prompt_query_context")
+sql_agent_graph.add_conditional_edges(
+    "prompt_query_context", schema_edge,
+    {"report_failure": "report_failure", "generate_sql": "generate_sql"},
+)
+sql_agent_graph.add_edge("generate_sql", "check_readonly")
+sql_agent_graph.add_conditional_edges(
+    "check_readonly", readonly_edge,
+    {"validate_sql": "validate_sql", "canceled_sql": "canceled_sql"},
+)
+sql_agent_graph.add_conditional_edges(
+    "validate_sql", validation_edge,
+    {"generate_sql": "generate_sql", "report_failure": "report_failure", "execute_sql": "execute_sql"},
+)
 sql_agent_graph.add_conditional_edges(
     "execute_sql", execution_edge,
     {
+        "generate_sql": "generate_sql",
         "report_failure": "report_failure",
         "represent_final_answer": "represent_final_answer",
         "end": END,
     },
 )
-
 sql_agent_graph.add_edge("canceled_sql", END)
 sql_agent_graph.add_edge("report_failure", END)
 sql_agent_graph.add_edge("represent_final_answer", END)
@@ -207,8 +320,12 @@ sql_analyst = sql_agent_graph.compile()
 
 if __name__ == "__main__":
     from utils.graph_viz import save_graph_png
+    from utils.sources import default_source
 
     save_graph_png(sql_analyst, "sql_analyst_graph.png")
 
-    response = sql_analyst.invoke({"user_question": "different types of payment method"})
+    response = sql_analyst.invoke({
+        "user_question": "different types of payment method",
+        "source_id": default_source().value["id"],
+    })
     print(response["final_answer"])
