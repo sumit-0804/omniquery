@@ -1,33 +1,33 @@
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_typesafe import Choice, Noul
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import interrupt
 
-from agents.registry import AGENT_KEYS, REGISTRY, AgentSpec
+from agents.registry import AGENT_KEYS, REGISTRY
 from Models.schema import DataAgentSchema, build_router_schema
-from utils.jev import pick_classifier
-from utils.llm_pick import pick_llm
+from utils.laya_router import decide
+from utils.llm_pick import pick_llm, text_of
 
-MIN_CONFIDENCE = 0.5
-CONFIDENT = 0.8
-MAX_AMBIGUITY = 0.6
+# Laya is only trusted when it is very sure: in the routing eval no wrong pick reached 0.80,
+# but many right and wrong picks sat between 0.55 and 0.75. Below this, the LLM decides.
+LAYA_TRUST = 0.80
 
 SYSTEM_PROMPT = f"""
-You are an expert data engineer. Read the user query and decide which agent handles it.
-Answer with one of: {", ".join(AGENT_KEYS)}.
-""" + "\n".join(f"- {key}: {spec.description}" for key, spec in REGISTRY.items())
+You are an expert data engineer. Read the user's request and decide which agent handles it.
+Answer with one of: {", ".join(AGENT_KEYS)}, or "unclear".
+""" + "\n".join(f"- {key}: {spec.description}" for key, spec in REGISTRY.items()) + """
+- unclear: the request is too vague to act on, points back to something not shown, or could
+  reasonably mean more than one of the above. Then also give one short question that would
+  settle it, and say in one sentence why it is unclear.
+A request to save, export or write data to a file is etl, even when the data comes from the database.
+"""
 
 ROUTE_QUESTIONS = {
-    "route": Choice(
-        instructions="Which data agent should handle this request?",
-        criteria={key: spec.description for key, spec in REGISTRY.items()},
-    ),
-    "ambiguous": Noul(
-        instructions="Is the request too vague to act on without asking a clarifying question?",
-        criteria={
-            "true": "Cannot be acted on as written because it points back to unstated context or names no concrete subject",
-            "false": "Can be acted on as written, even if some details are left to sensible defaults",
-        },
-    ),
+    "route": {
+        "type": "choice",
+        "instructions": "Which data agent should handle this request?",
+        "criteria": {key: spec.description for key, spec in REGISTRY.items()},
+    },
 }
 
 
@@ -36,84 +36,149 @@ def router_node(state: DataAgentSchema) -> dict:
     message = state.messages[-1].content
 
     try:
-        answers = pick_classifier().invoke({"state": message, "questions": ROUTE_QUESTIONS})
-        return {
-            "route_response": answers.choices["route"].choice,
-            "route_confidence": answers.choices["route"].confidence,
-            "is_ambiguous": answers.nouls["ambiguous"].noul,
-        }
-
+        decision = decide(message, ROUTE_QUESTIONS)
     except Exception as error:
-        # Jev needs network, so fall back to the local model when it is unavailable.
-        print(f"Jev routing unavailable ({error}), falling back to local LLM")
+        # Laya is local, but the model can still fail to load (no weights, no memory).
+        print(f"Laya routing failed ({error}), using the LLM router")
+        return llm_route(message)
 
-        llm_router = pick_llm("high").with_structured_output(build_router_schema(AGENT_KEYS))
-        response = llm_router.invoke(
-            [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=message)]
-        )
-        # The local fallback gives no confidence score, so assume it is usable.
-        return {"route_response": response.model_dump()["answer"], "route_confidence": 1.0}
+    if decision["confidence"] >= LAYA_TRUST:
+        return {"route_response": decision["route"], "route_confidence": decision["confidence"],
+                "route_source": "laya"}
+    return llm_route(message)
 
 
-def make_agent_node(spec: AgentSpec):
+def llm_route(message: str) -> dict:
+    llm_router = pick_llm("medium").with_structured_output(build_router_schema(AGENT_KEYS))
+    try:
+        response = llm_router.invoke([SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=message)])
+    except Exception as error:
+        # Every provider failed; the user can still settle it.
+        return {"route_response": "", "route_source": "llm",
+                "clarify_question": "Which of these should handle your request?",
+                "clarify_why": f"I could not decide automatically ({type(error).__name__})."}
+
+    answer = response.model_dump()
+    if answer["answer"] in REGISTRY:
+        return {"route_response": answer["answer"], "route_confidence": 1.0, "route_source": "llm"}
+    return {"route_response": "", "route_source": "llm",
+            "clarify_question": answer["question"] or "Which of these did you mean?",
+            "clarify_why": answer["why"] or "The request could mean more than one thing."}
+
+
+# After this many "explain it" replies the run ends and the user rephrases instead.
+MAX_CLARIFY_ROUNDS = 3
+
+
+def ask_human(state: DataAgentSchema) -> dict:
+    """Pause and let the user choose sql or etl, or ask for help deciding.
+
+    Resumed with Command(resume=<reply>): a number or agent key routes; an empty reply
+    cancels; anything else is a question, answered in plain words before asking again.
+    Each round is its own pass through this node, because a resume re-runs the node from
+    the top and would otherwise repeat earlier explanation calls.
+    """
+    options = [{"key": key, "label": spec.description} for key, spec in REGISTRY.items()]
+    reply = str(interrupt({
+        "question": state.clarify_question or "Which of these should handle your request?",
+        "why": state.clarify_why,
+        "explanation": state.clarify_explanation,
+        "options": options,
+    }) or "").strip()
+
+    choice = _as_choice(reply, options)
+    if choice:
+        return {"route_response": choice, "route_confidence": 1.0, "route_source": "human",
+                "clarify_explanation": ""}
+    if not reply or reply.lower() in {"cancel", "stop", "quit"}:
+        return _stop("Okay, I left it there. Ask again any time.")
+    if state.clarify_rounds + 1 >= MAX_CLARIFY_ROUNDS:
+        return _stop("Let's start over. Try asking again with a bit more detail about what you want back.")
+
+    return {"clarify_explanation": explain_choice(state.messages[-1].content, reply),
+            "clarify_rounds": state.clarify_rounds + 1}
+
+
+def _as_choice(reply: str, options: list[dict]) -> str:
+    keys = [o["key"] for o in options]
+    if reply.isdigit() and 1 <= int(reply) <= len(keys):
+        return keys[int(reply) - 1]
+    return reply.lower() if reply.lower() in keys else ""
+
+
+def _stop(text: str) -> dict:
+    return {"route_response": "", "clarify_explanation": "", "messages": [AIMessage(content=text)]}
+
+
+def explain_choice(request: str, user_question: str) -> str:
+    options = "\n".join(f"- {key}: {spec.description}" for key, spec in REGISTRY.items())
+    prompt = f"""
+    A user asked a data assistant: "{request}"
+    The assistant can handle it in one of these ways:
+    {options}
+
+    The user is not sure which to pick and asked: "{user_question}"
+    In two or three short, plain sentences, explain what each option would give them for
+    this particular request. Use everyday words, no jargon. Do not choose for them.
+    """
+    try:
+        return text_of(pick_llm("low").invoke(prompt)).strip()
+    except Exception:
+        return ("sql answers your question right here, by looking up the data and showing the result. "
+                "etl builds new data from it, or fetches it from a URL, and saves it as a file you can reuse.")
+
+
+def make_agent_node(key: str):
     def node(state: DataAgentSchema) -> dict:
-        result = spec.graph.invoke(spec.build_input(state.messages[-1].content))
+        # Looked up at call time, so tests can swap an agent's graph.
+        spec = REGISTRY[key]
+        result = spec.graph.invoke(spec.build_input(state.messages[-1].content, state.source_id))
         return {"messages": [AIMessage(content=spec.extract_answer(result))]}
 
     return node
 
 
-def clarify_node(state: DataAgentSchema) -> dict:
+def route_edge(state: DataAgentSchema) -> str:
+    spec = REGISTRY.get(state.route_response)
+    return spec.node_name if spec else "ask_human"
 
-    options = "\n".join(f"- {key}: {spec.description}" for key, spec in REGISTRY.items())
-    answer = (
-        "I am not sure which kind of request this is. Could you rephrase it?\n"
-        f"I can help with:\n{options}"
-    )
 
-    return {"messages": [AIMessage(content=answer)]}
+def human_edge(state: DataAgentSchema) -> str:
+    spec = REGISTRY.get(state.route_response)
+    if spec:
+        return spec.node_name
+    # An explanation was just written: ask again. Otherwise the user cancelled.
+    return "ask_human" if state.clarify_explanation else "end"
 
 
 data_agent_graph = StateGraph(DataAgentSchema)
 
 data_agent_graph.add_node("router_node", router_node)
-data_agent_graph.add_node("clarify_node", clarify_node)
-for spec in REGISTRY.values():
-    data_agent_graph.add_node(spec.node_name, make_agent_node(spec))
+data_agent_graph.add_node("ask_human", ask_human)
+for key, spec in REGISTRY.items():
+    data_agent_graph.add_node(spec.node_name, make_agent_node(key))
 
 data_agent_graph.add_edge(START, "router_node")
-
-
-def route_edge(state: DataAgentSchema) -> str:
-    spec = REGISTRY.get(state.route_response)
-    if spec is None or state.route_confidence < MIN_CONFIDENCE:
-        return "clarify_node"
-    # Vague wording only blocks when the route itself is also uncertain; the
-    # sub-agents already curate the question before acting on it.
-    if state.is_ambiguous > MAX_AMBIGUITY and state.route_confidence < CONFIDENT:
-        return "clarify_node"
-    return spec.node_name
-
-
+agent_nodes = {spec.node_name: spec.node_name for spec in REGISTRY.values()}
+data_agent_graph.add_conditional_edges("router_node", route_edge, agent_nodes | {"ask_human": "ask_human"})
 data_agent_graph.add_conditional_edges(
-    "router_node",
-    route_edge,
-    {spec.node_name: spec.node_name for spec in REGISTRY.values()} | {"clarify_node": "clarify_node"},
+    "ask_human", human_edge, agent_nodes | {"ask_human": "ask_human", "end": END},
 )
-
 for spec in REGISTRY.values():
     data_agent_graph.add_edge(spec.node_name, END)
-data_agent_graph.add_edge("clarify_node", END)
 
-data_agent = data_agent_graph.compile()
+# The checkpointer is what lets ask_human pause a run and resume it; each run needs a thread_id.
+data_agent = data_agent_graph.compile(checkpointer=InMemorySaver())
 
 
 if __name__ == "__main__":
     from utils.graph_viz import save_graph_png
+    from utils.sources import default_source
 
     save_graph_png(data_agent, "data_agent_graph.png")
 
-    response = data_agent.invoke(
-        {"messages": [HumanMessage(content="how many different payment methods are there?")]}
-    )
+    response = data_agent.invoke({
+        "messages": [HumanMessage(content="how many different payment methods are there?")],
+        "source_id": default_source().value["id"],
+    }, {"configurable": {"thread_id": "demo"}})
     print(response["messages"][-1].content)

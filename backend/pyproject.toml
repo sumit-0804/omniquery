@@ -4,18 +4,31 @@ version = "0.1.0"
 description = "Multi-agent natural language interface over data sources"
 requires-python = ">=3.11.9"
 dependencies = [
+    "duckdb>=1.5.5",
     "langchain>=1.4.0",
     "langchain-core>=0.3.0",
     "langchain-google-genai>=4.4.0",
     "langchain-openai>=1.0",
-    "langchain-typesafe>=0.0.1a3",
     "langgraph>=1.2.11",
+    "laya>=0.3.20",
     "pandas>=3.0.6",
     "psycopg2-binary>=2.9.13",
     "pydantic>=2.12.5",
     "python-dotenv>=1.0",
     "requests>=2.32",
+    "sqlglot>=30.19.0",
+    "torch>=2.14",
+    "tzdata>=2026.4 ; sys_platform == 'win32'",
 ]
+
+[tool.uv.sources]
+# CUDA build for Laya's router model; macOS has no CUDA wheels and uses PyPI.
+torch = [{ index = "pytorch-cu132", marker = "sys_platform == 'win32' or sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
+explicit = true
 
 [project.scripts]
 omniquery = "main:main"
@@ -33,4 +46,7 @@ packages = ["agents", "utils", "Models"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-markers = ["integration: needs a running Postgres with the demo data"]
+markers = [
+    "integration: needs a running Postgres with the demo data",
+    "laya: needs the Laya weights in the Hugging Face cache",
+]

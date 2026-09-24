@@ -1,0 +1,170 @@
+[
+  {
+    "message": "How many riders are registered?",
+    "label": "sql"
+  },
+  {
+    "message": "How many rides were cancelled?",
+    "label": "sql"
+  },
+  {
+    "message": "What is the average fare of completed rides?",
+    "label": "sql"
+  },
+  {
+    "message": "How many payments failed?",
+    "label": "sql"
+  },
+  {
+    "message": "For cancelled rides, how many were cancelled for each cancellation reason?",
+    "label": "sql"
+  },
+  {
+    "message": "Which drivers completed 15 or more rides?",
+    "label": "sql"
+  },
+  {
+    "message": "How many riders live in each city?",
+    "label": "sql"
+  },
+  {
+    "message": "Who are the 5 riders who spent the most on completed payments?",
+    "label": "sql"
+  },
+  {
+    "message": "What is the total revenue from completed payments for each payment method?",
+    "label": "sql"
+  },
+  {
+    "message": "How many rides were requested in March 2026?",
+    "label": "sql"
+  },
+  {
+    "message": "Which hour of the day had the most ride requests?",
+    "label": "sql"
+  },
+  {
+    "message": "What percentage of rides were cancelled in each city?",
+    "label": "sql"
+  },
+  {
+    "message": "Fetch https://pokeapi.co/api/v2/pokemon?limit=50 and save it to data/extract as csv",
+    "label": "etl"
+  },
+  {
+    "message": "Download the JSON from https://jsonplaceholder.typicode.com/users into data/extract",
+    "label": "etl"
+  },
+  {
+    "message": "Pull the posts from https://jsonplaceholder.typicode.com/posts and store them as a csv file",
+    "label": "etl"
+  },
+  {
+    "message": "Transform data/extract/extracted_data.csv keeping only bulbasaur and save it to data/transform",
+    "label": "etl"
+  },
+  {
+    "message": "Clean data/extract/users.csv: drop empty rows, lowercase the emails, and save it as parquet",
+    "label": "etl"
+  },
+  {
+    "message": "Take data/extract/orders.csv, rename the columns to snake_case and write it to data/transform",
+    "label": "etl"
+  },
+  {
+    "message": "Convert data/extract/extracted_data.json to a csv file in data/transform",
+    "label": "etl"
+  },
+  {
+    "message": "Extract the weather data from the API at https://api.open-meteo.com/v1/forecast?latitude=43.7&longitude=-79.4&hourly=temperature_2m and save it",
+    "label": "etl"
+  },
+  {
+    "message": "Remove duplicate rows from data/extract/extracted_data.csv and save the result",
+    "label": "etl"
+  },
+  {
+    "message": "Join data/extract/users.csv with data/extract/posts.csv on user id and save the combined file",
+    "label": "etl"
+  },
+  {
+    "message": "what about last month?",
+    "label": "clarify"
+  },
+  {
+    "message": "fix it",
+    "label": "clarify"
+  },
+  {
+    "message": "do the same thing again but better",
+    "label": "clarify"
+  },
+  {
+    "message": "and the other one?",
+    "label": "clarify"
+  },
+  {
+    "message": "hmm",
+    "label": "clarify"
+  },
+  {
+    "message": "can you check that",
+    "label": "clarify"
+  },
+  {
+    "message": "why is it like that",
+    "label": "clarify"
+  },
+  {
+    "message": "show me more",
+    "label": "clarify"
+  },
+  {
+    "message": "save all completed rides by riders who live in Toronto, with fare and distance, as toronto_rides",
+    "label": "etl"
+  },
+  {
+    "message": "transform the payments into a csv of monthly revenue by payment method",
+    "label": "etl"
+  },
+  {
+    "message": "export the cancelled rides to a parquet file",
+    "label": "etl"
+  },
+  {
+    "message": "create a table of drivers with their average rating and save it",
+    "label": "etl"
+  },
+  {
+    "message": "make a csv of users per city",
+    "label": "etl"
+  },
+  {
+    "message": "save the failed payments as failed_payments",
+    "label": "etl"
+  },
+  {
+    "message": "build a dataset of rides joined with the rider's city and save it",
+    "label": "etl"
+  },
+  {
+    "message": "write the top 100 drivers by completed rides to a file",
+    "label": "etl"
+  },
+  {
+    "message": "show the monthly revenue by payment method",
+    "label": "sql"
+  },
+  {
+    "message": "list the failed payments",
+    "label": "sql"
+  },
+  {
+    "message": "what is the average rating of each driver?",
+    "label": "sql"
+  },
+  {
+    "message": "how many users are there per city?",
+    "label": "sql"
+  }
+]
