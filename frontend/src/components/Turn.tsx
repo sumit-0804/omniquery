@@ -56,7 +56,7 @@ export function Turn({ run, notes }: { run: RunState; notes: Record<string, stri
       </div>
       <div className="mt-5">
         <Answer text={run.answer} done={run.answerDone} running={run.phase === "running"} />
-        {run.rows && <ResultPanel rows={run.rows} />}
+        {run.rows && <ResultPanel rows={run.rows} chart={run.chart} />}
         <SqlBlock run={run} notes={notes} />
       </div>
     </div>
