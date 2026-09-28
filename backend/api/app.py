@@ -28,7 +28,7 @@ from utils.result import Result
 MAX_UPLOAD_BYTES = 200 * 1024 * 1024
 FRONTEND_DIST = PROJECT_ROOT.parent / "frontend" / "dist"
 
-_STATUS = {"source.not_found": 404, "source.protected": 400, "db.unreachable": 502, "upload.too_large": 413}
+_STATUS = {"source.not_found": 404, "api.not_found": 404,"source.protected": 400, "db.unreachable": 502, "upload.too_large": 413}
 
 
 def _error(result: Result) -> JSONResponse:
@@ -40,6 +40,8 @@ def _public(source: dict) -> dict:
     shown = {k: v for k, v in source.items() if k != "url"}
     if "url" in source:
         shown["url"] = sources.masked(source["url"])
+    if source.get("kind") == "postgres" and not source.get("readonly"):
+        shown["readonly_role_sql"] = sources.readonly_role_sql(source.get("schema", "public"))
     return shown
 
 
@@ -203,6 +205,8 @@ def create_app() -> FastAPI:
         @app.get("/{path:path}", include_in_schema=False)
         def frontend(path: str):
             # The built React app: real files as they are, every other path gets index.html.
+            if path.startswith("api/"):
+                return _error(Result.fail("api.not_found", f"No API route {path!r}."))
             candidate = (FRONTEND_DIST / path).resolve()
             if path and candidate.is_file() and candidate.is_relative_to(FRONTEND_DIST.resolve()):
                 return FileResponse(candidate)

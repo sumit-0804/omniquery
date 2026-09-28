@@ -8,9 +8,10 @@ type HeaderProps = {
   tableCount: number | null;
   showToggle: boolean;
   onToggleSidebar: () => void;
+  onCatalog: () => void;
 };
 
-export function ChatHeader({ source, tableCount, showToggle, onToggleSidebar }: HeaderProps) {
+export function ChatHeader({ source, tableCount, showToggle, onToggleSidebar, onCatalog }: HeaderProps) {
   const notes = source ? Object.keys(source.notes).length : 0;
   return (
     <header className="flex h-[46px] flex-none items-center gap-2.5 border-b border-line px-4">
@@ -36,6 +37,15 @@ export function ChatHeader({ source, tableCount, showToggle, onToggleSidebar }: 
       )}
       {notes > 0 && (
         <div className="flex-none text-[11.5px] whitespace-nowrap text-success">{notes} {notes === 1 ? "note" : "notes"} teaching the model</div>
+      )}
+      {source && (
+        <button
+          type="button"
+          onClick={onCatalog}
+          className="ml-auto flex-none rounded-input border border-line-strong bg-raised-3 px-2.5 py-[5px] text-[12px] leading-none text-ink-2"
+        >
+          Catalog
+        </button>
       )}
     </header>
   );

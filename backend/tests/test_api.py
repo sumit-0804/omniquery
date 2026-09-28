@@ -207,6 +207,15 @@ def test_sources_never_expose_a_password(client, demo_source):
     assert listed[0]["url"] == "postgresql://u:****@h:5432/d"
 
 
+def test_a_writable_source_carries_the_read_only_role_snippet(client, demo_source):
+    assert "readonly_role_sql" not in client.get("/api/sources").json()[0]
+
+    sources._save({"rw": sources._record("rw", "rw", "postgres", url="postgresql://u:p@h/d",
+                                         schema="sales", readonly=False)})
+    listed = client.get("/api/sources").json()[0]
+    assert "GRANT SELECT ON ALL TABLES IN SCHEMA sales" in listed["readonly_role_sql"]
+
+
 def test_a_bad_connection_string_is_a_400(client):
     response = client.post("/api/sources/test", json={"dsn": "not a url", "schema": "public"})
 
