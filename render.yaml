@@ -1,0 +1,21 @@
+# Render Blueprint for the hosted, read-only demo (Dashboard -> New -> Blueprint).
+# Secrets are `sync: false`: Render asks for them when the blueprint is created; they never live in the repo.
+services:
+  - type: web
+    name: omniquery-demo
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: OMNIQUERY_DEMO
+        value: "1"
+      # A read-only role on the hosted sample database, e.g. postgresql://omniquery_demo:...@host/db?sslmode=require
+      - key: DEMO_DATABASE_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      # Optional: the Jev router. Without it an LLM routes each question.
+      - key: OPENROUTER_API_KEY
+        sync: false

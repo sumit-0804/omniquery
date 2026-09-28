@@ -1,0 +1,21 @@
+# Secrets never go into the image; hosts pass them as environment variables.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Built or installed inside the image
+**/.venv
+**/node_modules
+frontend/dist
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+
+# Local only
+.git
+.claude
+*.zip
+frontend/design_handoff_omniquery_web
+backend/data/extract
+backend/data/transform
+backend/evals/results
