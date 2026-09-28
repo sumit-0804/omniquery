@@ -117,6 +117,10 @@ def explain_choice(request: str, user_question: str) -> str:
     The assistant can handle it in one of these ways:
     {options}
 
+    The assistant only reads the user's data: no option can change, fix or delete what is
+    stored in the database. If the request is to change stored data, say so plainly; the
+    closest it can do is etl saving a corrected copy as a new file.
+
     The user is not sure which to pick and asked: "{user_question}"
     In two or three short, plain sentences, explain what each option would give them for
     this particular request. Use everyday words, no jargon. Do not choose for them.
@@ -125,7 +129,8 @@ def explain_choice(request: str, user_question: str) -> str:
         return text_of(pick_llm("low").invoke(prompt)).strip()
     except Exception:
         return ("sql answers your question right here, by looking up the data and showing the result. "
-                "etl builds new data from it, or fetches it from a URL, and saves it as a file you can reuse.")
+                "etl builds new data from it, or fetches it from a URL, and saves it as a file you can reuse. "
+                "chart draws the result as a picture. None of them change the data you already have.")
 
 
 def make_agent_node(key: str):

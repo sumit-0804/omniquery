@@ -2,7 +2,7 @@ import subprocess
 import sys
 
 import pytest
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 import agents.data_agent as da
 from Models.schema import DataAgentSchema
@@ -140,6 +140,19 @@ def explainer(monkeypatch):
 
     monkeypatch.setattr(da, "explain_choice", fake_explain)
     return asked
+
+
+def test_the_explanation_prompt_says_the_assistant_cannot_change_data(monkeypatch):
+    prompts = []
+
+    class Model:
+        def invoke(self, prompt):
+            prompts.append(prompt)
+            return AIMessage(content="plain words")
+
+    monkeypatch.setattr(da, "pick_llm", lambda *a, **k: Model())
+    assert da.explain_choice("fix it", "what is the difference?") == "plain words"
+    assert "no option can change, fix or delete" in prompts[0]
 
 
 def test_a_question_instead_of_a_choice_gets_an_explanation_then_the_same_options(router, fake_agents, explainer):
