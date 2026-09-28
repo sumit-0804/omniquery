@@ -37,7 +37,7 @@
  },
  {
   "type": "step",
-  "t": 0.008,
+  "t": 0.009,
   "id": "prompt_query_context",
   "label": "Selecting tables",
   "status": "done",
@@ -52,7 +52,7 @@
  },
  {
   "type": "step",
-  "t": 0.01,
+  "t": 0.011,
   "id": "generate_sql",
   "label": "Generating SQL",
   "status": "done"
@@ -66,7 +66,7 @@
  },
  {
   "type": "step",
-  "t": 0.019,
+  "t": 0.017,
   "id": "check_readonly",
   "label": "Checking the query is read-only",
   "status": "active"
@@ -100,7 +100,7 @@
  },
  {
   "type": "retry",
-  "t": 0.022,
+  "t": 0.023,
   "attempt": 1,
   "of": 3,
   "code": "42703",
@@ -108,14 +108,14 @@
  },
  {
   "type": "step",
-  "t": 0.022,
+  "t": 0.023,
   "id": "generate_sql",
   "label": "Generating SQL",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.022,
+  "t": 0.023,
   "id": "generate_sql",
   "label": "Generating SQL",
   "status": "done"
@@ -156,28 +156,28 @@
  },
  {
   "type": "step",
-  "t": 0.023,
+  "t": 0.024,
   "id": "validate_sql",
   "label": "Validating the query",
   "status": "done"
  },
  {
   "type": "step",
-  "t": 0.023,
+  "t": 0.024,
   "id": "execute_sql",
   "label": "Executing",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.023,
+  "t": 0.024,
   "id": "execute_sql",
   "label": "Executing",
   "status": "done"
  },
  {
   "type": "rows",
-  "t": 0.023,
+  "t": 0.024,
   "columns": [
    "avg_fare"
   ],

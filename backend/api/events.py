@@ -173,7 +173,10 @@ class _Run:
         if node == "report_failure":
             self.outcome = "error"
             code, detail = self.error
-            yield self.event("error", code=code or "run.failed", detail=detail, attempts=self.attempts)
+            # Each agent's report opens with its plain-English headline; reuse it rather than copy the strings.
+            headline = (u.get("final_answer") or "").split("\n\n", 1)[0]
+            yield self.event("error", code=code or "run.failed", detail=detail, attempts=self.attempts,
+                             headline=headline)
 
     def _retry(self, entry: dict, limit: int) -> Iterator[dict]:
         self.attempts = max(self.attempts, entry.get("attempt", 0))

@@ -28,6 +28,9 @@ function useWordPairs(text: string): number {
 // Answers keep the app's type: emphasis and lists only, never headings, links or raw HTML.
 const ALLOWED = ["p", "strong", "em", "ul", "ol", "li", "code"];
 
+// Answers quote Windows paths (C:\Users\...), where markdown would read "\." as an escape and drop the "\".
+export const literalBackslashes = (text: string) => text.replaceAll("\\", "\\\\");
+
 export function Answer({ text, done, running }: { text: string; done: boolean; running: boolean }) {
   const shown = useWordPairs(text);
   const complete = done && shown >= text.length;
@@ -42,7 +45,7 @@ export function Answer({ text, done, running }: { text: string; done: boolean; r
         className={`oq-answer max-w-[74ch] text-[15.5px] leading-[1.72] text-pretty text-ink ${complete ? "" : "oq-typing"}`}
       >
         <Markdown allowedElements={ALLOWED} unwrapDisallowed>
-          {text.slice(0, shown)}
+          {literalBackslashes(text.slice(0, shown))}
         </Markdown>
       </div>
       {/* Announced once, whole, rather than word by word. */}

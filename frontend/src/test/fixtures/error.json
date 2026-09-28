@@ -15,7 +15,7 @@
  },
  {
   "type": "step",
-  "t": 0.003,
+  "t": 0.002,
   "id": "router_node",
   "label": "Choosing an agent",
   "status": "done",
@@ -30,18 +30,81 @@
  },
  {
   "type": "step",
-  "t": 0.007,
+  "t": 0.005,
   "id": "prompt_query_context",
   "label": "Selecting tables",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.011,
+  "t": 0.007,
   "id": "prompt_query_context",
   "label": "Selecting tables",
   "status": "done",
   "detail": "rides"
+ },
+ {
+  "type": "step",
+  "t": 0.009,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.012,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "done"
+ },
+ {
+  "type": "sql",
+  "t": 0.012,
+  "query": "SELECT avg(r.fare_amount) FROM rides r",
+  "attempt": 1,
+  "notes": []
+ },
+ {
+  "type": "step",
+  "t": 0.012,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.012,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "done"
+ },
+ {
+  "type": "judge",
+  "t": 0.013,
+  "safe": true,
+  "comments": ""
+ },
+ {
+  "type": "step",
+  "t": 0.013,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.013,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "failed"
+ },
+ {
+  "type": "retry",
+  "t": 0.013,
+  "attempt": 1,
+  "of": 3,
+  "code": "42703",
+  "detail": "42703: column r.fare_amount does not exist"
  },
  {
   "type": "step",
@@ -52,118 +115,55 @@
  },
  {
   "type": "step",
-  "t": 0.015,
+  "t": 0.013,
   "id": "generate_sql",
   "label": "Generating SQL",
   "status": "done"
  },
  {
   "type": "sql",
-  "t": 0.015,
-  "query": "SELECT avg(r.fare_amount) FROM rides r",
-  "attempt": 1,
-  "notes": []
- },
- {
-  "type": "step",
-  "t": 0.015,
-  "id": "check_readonly",
-  "label": "Checking the query is read-only",
-  "status": "active"
- },
- {
-  "type": "step",
-  "t": 0.015,
-  "id": "check_readonly",
-  "label": "Checking the query is read-only",
-  "status": "done"
- },
- {
-  "type": "judge",
-  "t": 0.016,
-  "safe": true,
-  "comments": ""
- },
- {
-  "type": "step",
-  "t": 0.016,
-  "id": "validate_sql",
-  "label": "Validating the query",
-  "status": "active"
- },
- {
-  "type": "step",
-  "t": 0.016,
-  "id": "validate_sql",
-  "label": "Validating the query",
-  "status": "failed"
- },
- {
-  "type": "retry",
-  "t": 0.016,
-  "attempt": 1,
-  "of": 3,
-  "code": "42703",
-  "detail": "42703: column r.fare_amount does not exist"
- },
- {
-  "type": "step",
-  "t": 0.016,
-  "id": "generate_sql",
-  "label": "Generating SQL",
-  "status": "active"
- },
- {
-  "type": "step",
-  "t": 0.016,
-  "id": "generate_sql",
-  "label": "Generating SQL",
-  "status": "done"
- },
- {
-  "type": "sql",
-  "t": 0.016,
+  "t": 0.013,
   "query": "SELECT avg(r.fare_amount) FROM rides r",
   "attempt": 2,
   "notes": []
  },
  {
   "type": "step",
-  "t": 0.017,
+  "t": 0.014,
   "id": "check_readonly",
   "label": "Checking the query is read-only",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.017,
+  "t": 0.014,
   "id": "check_readonly",
   "label": "Checking the query is read-only",
   "status": "done"
  },
  {
   "type": "judge",
-  "t": 0.017,
+  "t": 0.014,
   "safe": true,
   "comments": ""
  },
  {
   "type": "step",
-  "t": 0.017,
+  "t": 0.014,
   "id": "validate_sql",
   "label": "Validating the query",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.017,
+  "t": 0.014,
   "id": "validate_sql",
   "label": "Validating the query",
   "status": "failed"
  },
  {
   "type": "retry",
-  "t": 0.017,
+  "t": 0.014,
   "attempt": 2,
   "of": 3,
   "code": "42703",
@@ -171,84 +171,85 @@
  },
  {
   "type": "step",
-  "t": 0.017,
+  "t": 0.014,
   "id": "generate_sql",
   "label": "Generating SQL",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.017,
+  "t": 0.014,
   "id": "generate_sql",
   "label": "Generating SQL",
   "status": "done"
  },
  {
   "type": "sql",
-  "t": 0.018,
+  "t": 0.015,
   "query": "SELECT avg(r.fare_amount) FROM rides r",
   "attempt": 3,
   "notes": []
  },
  {
   "type": "step",
-  "t": 0.018,
+  "t": 0.015,
   "id": "check_readonly",
   "label": "Checking the query is read-only",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.018,
+  "t": 0.015,
   "id": "check_readonly",
   "label": "Checking the query is read-only",
   "status": "done"
  },
  {
   "type": "judge",
-  "t": 0.018,
+  "t": 0.015,
   "safe": true,
   "comments": ""
  },
  {
   "type": "step",
-  "t": 0.018,
+  "t": 0.015,
   "id": "validate_sql",
   "label": "Validating the query",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.018,
+  "t": 0.016,
   "id": "validate_sql",
   "label": "Validating the query",
   "status": "failed"
  },
  {
   "type": "step",
-  "t": 0.018,
+  "t": 0.016,
   "id": "report_failure",
   "label": "Reporting the failure",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.018,
+  "t": 0.016,
   "id": "report_failure",
   "label": "Reporting the failure",
   "status": "done"
  },
  {
   "type": "error",
-  "t": 0.018,
+  "t": 0.016,
   "code": "db.query_failed",
   "detail": "42703: column r.fare_amount does not exist",
-  "attempts": 3
+  "attempts": 3,
+  "headline": "The database rejected the generated query."
  },
  {
   "type": "done",
-  "t": 0.019,
-  "elapsed": 0.019,
+  "t": 0.017,
+  "elapsed": 0.017,
   "outcome": "error"
  }
 ]

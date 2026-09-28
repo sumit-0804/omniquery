@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { RowsEvent, RunEvent } from "../api/events";
-import { nextReveal } from "../components/Answer";
+import { renderToStaticMarkup } from "react-dom/server";
+import Markdown from "react-markdown";
+import { createElement } from "react";
+import { literalBackslashes, nextReveal } from "../components/Answer";
 import { replay } from "../state/run";
 import { columnKinds, formatCell, rowSummary } from "../state/table";
 import rowsMany from "./fixtures/rows-many.json";
@@ -69,6 +72,12 @@ it("nextReveal steps two words at a time and ends at the text's end", () => {
   }
   expect(steps).toEqual(["Credit card", "Credit card leads with", "Credit card leads with **416** rides."]);
   expect(nextReveal("one two   ", 7)).toBe(10);
+});
+
+it("keeps Windows paths intact through markdown", () => {
+  const path = String.raw`Saved to C:\Users\sumit\.omniquery\outputs\users.parquet`;
+  const html = renderToStaticMarkup(createElement(Markdown, null, literalBackslashes(path)));
+  expect(html).toContain(String.raw`C:\Users\sumit\.omniquery\outputs\users.parquet`);
 });
 
 it("a 60-row run keeps every row, with the model's 25 marked", () => {

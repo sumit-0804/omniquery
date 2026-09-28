@@ -116,6 +116,17 @@ def test_a_failed_explain_emits_a_retry_and_a_second_query(client, agents):
     assert steps(events).count("generate_sql") == 2
 
 
+def test_spent_retries_end_in_an_error_with_the_agents_headline(client, agents):
+    failed = query_failed("42703", "column fare_amount does not exist")
+    agents(replies=["SELECT fare_amount FROM rides"] * 3, explain=[failed] * 3)
+    events = ask(client)
+
+    error = next(e for e in events if e["type"] == "error")
+    assert error == error | {"code": "db.query_failed", "attempts": 3,
+                             "headline": "The database rejected the generated query."}
+    assert events[-1]["outcome"] == "error"
+
+
 def test_a_write_is_canceled_not_an_error(client, agents):
     agents(replies=["UPDATE rides SET fare = 0"])
     events = ask(client, "set every fare to zero")

@@ -3,6 +3,7 @@ import { exampleQuestions } from "./agents";
 import { api, type Catalog as CatalogData, isApiError, type Source, WORKSPACE_ID } from "./api/client";
 import { Catalog } from "./components/Catalog";
 import { ChatHeader, Composer, EmptyState } from "./components/Chat";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Rail } from "./components/Rail";
 import { Sidebar } from "./components/Sidebar";
 import { Turn } from "./components/Turn";
@@ -31,7 +32,7 @@ export default function App() {
   const [view, setView] = useState<"chat" | "catalog">("chat");
   const [outputsVersion, setOutputsVersion] = useState(0);
   const [draft, setDraft] = useState("");
-  const { state: run, ask, play } = useRun();
+  const { state: run, ask, resume, play } = useRun();
 
   // Dev only: ?replay=retry plays src/test/fixtures/retry.json through the real reducer.
   useEffect(() => {
@@ -160,7 +161,15 @@ export default function App() {
                   {loadError}
                 </div>
               ) : run.phase !== "idle" ? (
-                <Turn key={run.runId} run={run} notes={active?.notes ?? {}} />
+                <ErrorBoundary key={run.runId}>
+                  <Turn
+                    run={run}
+                    notes={active?.notes ?? {}}
+                    onReply={(reply) => run.threadId && resume(run.threadId, reply)}
+                    onRetry={() => submit(run.question)}
+                    onCatalog={() => setView("catalog")}
+                  />
+                </ErrorBoundary>
               ) : (
                 sources && <EmptyState source={active} examples={examples} onExample={setDraft} />
               )}

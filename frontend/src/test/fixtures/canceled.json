@@ -15,7 +15,7 @@
  },
  {
   "type": "step",
-  "t": 0.004,
+  "t": 0.003,
   "id": "router_node",
   "label": "Choosing an agent",
   "status": "done",
@@ -23,21 +23,21 @@
  },
  {
   "type": "routing",
-  "t": 0.004,
+  "t": 0.003,
   "agent": "sql",
   "confidence": 0.95,
   "source": "jev"
  },
  {
   "type": "step",
-  "t": 0.009,
+  "t": 0.006,
   "id": "prompt_query_context",
   "label": "Selecting tables",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.009,
+  "t": 0.007,
   "id": "prompt_query_context",
   "label": "Selecting tables",
   "status": "done",
@@ -45,75 +45,75 @@
  },
  {
   "type": "step",
-  "t": 0.009,
+  "t": 0.008,
   "id": "generate_sql",
   "label": "Generating SQL",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.01,
+  "t": 0.008,
   "id": "generate_sql",
   "label": "Generating SQL",
   "status": "done"
  },
  {
   "type": "sql",
-  "t": 0.01,
+  "t": 0.009,
   "query": "UPDATE rides SET fare = 0",
   "attempt": 1,
   "notes": []
  },
  {
   "type": "step",
-  "t": 0.01,
+  "t": 0.009,
   "id": "check_readonly",
   "label": "Checking the query is read-only",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.01,
+  "t": 0.009,
   "id": "check_readonly",
   "label": "Checking the query is read-only",
   "status": "failed"
  },
  {
   "type": "judge",
-  "t": 0.01,
+  "t": 0.009,
   "safe": false,
   "comments": "found UPDATE statement"
  },
  {
   "type": "step",
-  "t": 0.011,
+  "t": 0.009,
   "id": "canceled_sql",
   "label": "Not run",
   "status": "active"
  },
  {
   "type": "step",
-  "t": 0.011,
+  "t": 0.009,
   "id": "canceled_sql",
   "label": "Not run",
   "status": "done"
  },
  {
   "type": "answer",
-  "t": 0.011,
+  "t": 0.01,
   "text": "The query was not run because it is not read-only: found UPDATE statement.",
   "done": false
  },
  {
   "type": "answer",
-  "t": 0.012,
+  "t": 0.01,
   "text": "",
   "done": true
  },
  {
   "type": "done",
-  "t": 0.012,
-  "elapsed": 0.012,
+  "t": 0.01,
+  "elapsed": 0.01,
   "outcome": "canceled"
  }
 ]

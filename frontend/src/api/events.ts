@@ -36,7 +36,13 @@ export type ClarifyEvent = Base & {
   explanation?: string;
   options: { key: AgentKey; label: string }[];
 };
-export type ErrorEvent = Base & { type: "error"; code: string; detail: string; attempts: number };
+export type ErrorEvent = Base & {
+  type: "error";
+  code: string;
+  detail: string;
+  attempts: number;
+  headline?: string; // the agent's plain-English failure line; absent for server and stream errors
+};
 export type DoneEvent = Base & {
   type: "done";
   elapsed: number;
