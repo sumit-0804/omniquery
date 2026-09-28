@@ -6,6 +6,7 @@ const RUN_HEADLINES: Record<string, string> = {
   "server.error": "Something went wrong on the server. The details are in its log.",
   "run.not_paused": "That question is no longer waiting for an answer. Ask it again.",
   "source.not_found": "That data source is not saved.",
+  "llm.unavailable": "Every model is busy or out of today's free budget. Try again later.",
 };
 
 export function errorHeadline(error: ErrorEvent): string {

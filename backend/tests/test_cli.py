@@ -45,6 +45,14 @@ def test_listing_never_prints_a_password(capsys):
     assert "account can write" in out
 
 
+def test_add_files_expands_a_wildcard_the_shell_left_alone(capsys):
+    # PowerShell hands "data/*.csv" over as is; the CLI expands it itself.
+    assert main.main(["--add-files", "rides", str(PROJECT_ROOT / "data" / "*.csv")]) == 0
+
+    tables = sources.get_source("rides").value["tables"]
+    assert sorted(tables) == ["payments", "ratings", "rides", "users", "vehicles"]
+
+
 def test_notes_from_the_cli(capsys):
     _add("rides")
 

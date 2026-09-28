@@ -68,23 +68,35 @@ flowchart TD
     class S6 ok
     class E1,E2,E3,E4 etl
     class NR,F stop
-    style SQL fill:#eef3fe,stroke:#3b63c9,color:#111
-    style ETL fill:#f5effe,stroke:#7c4fd6,color:#111
+    style SQL fill:transparent,stroke:#3b63c9,stroke-width:2px
+    style ETL fill:transparent,stroke:#7c4fd6,stroke-width:2px
 ```
 
 The agents are [LangGraph](https://github.com/langchain-ai/langgraph) graphs (`backend/agents/`). The backend is FastAPI, uploaded files and outputs live in DuckDB, and the frontend is React + Vite + Tailwind with Vega-Lite charts.
 
-## Quick start
+## Run it locally
 
-Needs [uv](https://docs.astral.sh/uv/) and [Bun](https://bun.sh/).
+You need [uv](https://docs.astral.sh/uv/) and [Bun](https://bun.sh/), and one free API key from [Groq](https://console.groq.com/keys). No database is required: the repo includes sample rideshare data.
 
 ```bash
-cp backend/.env.example backend/.env    # add at least one model API key
+git clone https://github.com/sumit-0804/omniquery.git && cd omniquery
+cp backend/.env.example backend/.env                  # then paste your key into GROQ_API_KEY
 cd frontend && bun install && bun run build
-cd ../backend && uv run omniquery serve # opens http://127.0.0.1:7666
+cd ../backend && uv run omniquery --add-files rides data/*.csv
+uv run omniquery serve                                # opens http://127.0.0.1:7666
 ```
 
-Then connect a database or upload files from the sidebar. There is also a CLI: `uv run omniquery --help`.
+Then ask something like *"How many rides were cancelled for each reason?"*.
+
+Optional keys in `backend/.env`:
+
+| Key | Adds |
+| --- | --- |
+| [`OPENROUTER_API_KEY`](https://openrouter.ai/keys) | A faster, more accurate router (the Jev classifier); without it an LLM picks the agent. |
+| `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` | A second free model provider to fall back to. |
+| `GEMINI_API_KEY` | A third fallback provider. |
+
+To use your own data, connect a Postgres database or upload CSV, Parquet or JSON files from the sidebar. There is also a CLI: `uv run omniquery --help`.
 
 ## Tests
 

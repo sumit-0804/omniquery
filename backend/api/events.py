@@ -15,7 +15,8 @@ from agents.data_agent import data_agent
 from agents.etl_analyst import MAX_ETL_ATTEMPTS
 from agents.registry import REGISTRY
 from agents.sql_analyst import MAX_SQL_ATTEMPTS, ROW_LIMIT
-from utils.llm_pick import CHAINS, text_of
+from utils.llm_pick import CHAINS, ModelCoolingDown, NoProviderConfigured, first_model, is_transient, text_of
+from utils.ratelimit import QuotaExceeded
 
 _log = logging.getLogger(__name__)
 
@@ -42,7 +43,6 @@ _ANSWER_NODES = {"represent_final_answer"}
 _AGENT_NODES = {spec.node_name for spec in REGISTRY.values()}
 _RETRYABLE = {"db.query_failed", "etl.bad_plan"}
 _PROVIDER_OF_MODEL = {model: provider for chain in CHAINS.values() for provider, model, _ in chain}
-_FIRST_MODEL = CHAINS["low"][0][1]
 
 
 def label(node: str) -> str:
@@ -70,8 +70,18 @@ def run_events(payload, thread_id: str, new_question: bool = True) -> Iterator[d
     except Exception as exc:
         # Details go to the server log; the client gets a stable code, not internals.
         _log.exception("run %s failed", thread_id)
-        yield run.event("error", code="server.error", detail=type(exc).__name__, attempts=run.attempts)
+        yield run.event("error", attempts=run.attempts, **_failure(exc))
         yield run.event("done", elapsed=run.elapsed(), outcome="error")
+
+
+def _failure(exc: Exception) -> dict:
+    if isinstance(exc, NoProviderConfigured):
+        return {"code": "llm.unavailable", "detail": str(exc), "headline": str(exc)}
+    # Every model in the chain was busy, cooling down or out of today's budget.
+    if isinstance(exc, (QuotaExceeded, ModelCoolingDown)) or is_transient(exc):
+        return {"code": "llm.unavailable", "detail": f"{type(exc).__name__}: {exc}"[:300],
+                "headline": "Every model is busy or out of today's free budget. Try again later."}
+    return {"code": "server.error", "detail": type(exc).__name__}
 
 
 class _Run:
@@ -197,5 +207,6 @@ class _Run:
                 yield self.event("answer", text="", done=True)
             if self.model and self.answered:
                 yield self.event("provider", provider=_PROVIDER_OF_MODEL.get(self.model, ""), model=self.model,
-                                 fallback=self.model != _FIRST_MODEL)
+                                 # Judged against the first model with a key, so a one-provider setup isn't all "fallback".
+                                 fallback=self.model != first_model())
         yield self.event("done", elapsed=self.elapsed(), outcome=self.outcome)

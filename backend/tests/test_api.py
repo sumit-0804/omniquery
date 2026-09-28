@@ -14,6 +14,8 @@ from api.events import label
 from tests.fakes import FakeDB, query_failed, rows
 from utils import sources
 from utils.config import PROJECT_ROOT
+from utils.llm_pick import NoProviderConfigured
+from utils.ratelimit import QuotaExceeded
 from utils.result import Result
 
 SQL = "SELECT count(*) FROM rides WHERE status = 'cancelled'"
@@ -124,6 +126,25 @@ def test_spent_retries_end_in_an_error_with_the_agents_headline(client, agents):
     error = next(e for e in events if e["type"] == "error")
     assert error == error | {"code": "db.query_failed", "attempts": 3,
                              "headline": "The database rejected the generated query."}
+    assert events[-1]["outcome"] == "error"
+
+
+@pytest.mark.parametrize("failure, headline", [
+    (lambda: QuotaExceeded("daily token budget spent"), "Every model is busy"),
+    (lambda: NoProviderConfigured("No model provider is configured. Set GROQ_API_KEY"), "Set GROQ_API_KEY"),
+])
+def test_no_usable_model_is_a_clear_error_not_a_server_fault(client, agents, monkeypatch, failure, headline):
+    agents()
+
+    def spent(*args, **kwargs):
+        raise failure()
+
+    monkeypatch.setattr(sa, "pick_llm", spent)
+    events = ask(client)
+
+    error = next(e for e in events if e["type"] == "error")
+    assert error["code"] == "llm.unavailable"
+    assert headline in error["headline"]
     assert events[-1]["outcome"] == "error"
 
 

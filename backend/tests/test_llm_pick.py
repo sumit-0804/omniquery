@@ -31,11 +31,11 @@ def _no_cooldowns():
     RuntimeError("Error code: 429 - rate limit reached"),
 ])
 def test_provider_side_failures_are_transient(error):
-    assert lp._is_transient(error)
+    assert lp.is_transient(error)
 
 
 def test_a_bad_request_is_not_transient():
-    assert not lp._is_transient(RuntimeError("400 INVALID_ARGUMENT: unknown field"))
+    assert not lp.is_transient(RuntimeError("400 INVALID_ARGUMENT: unknown field"))
 
 
 def test_a_transient_failure_cools_the_model_down():
@@ -172,6 +172,36 @@ def test_each_gemini_model_has_its_own_budget_and_pacific_reset():
     assert lite is not flash
     assert lite.quota.rpd != flash.quota.rpd
     assert lite.quota.reset_tz == flash.quota.reset_tz == "America/Los_Angeles"
+
+
+def test_one_groq_key_is_enough(monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "dummy")
+    for key in ("GEMINI_API_KEY", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OMNIQUERY_PROVIDER"):
+        monkeypatch.delenv(key, raising=False)
+
+    for level in ("low", "high"):
+        model = lp.pick_llm(level)
+        models = _chain_models(model) if hasattr(model, "fallbacks") else [model]
+        assert {m.openai_api_base for m in models} == {lp.GROQ_BASE_URL}
+        assert models[-1].max_retries == 1
+    assert lp.first_model() == lp.CHAINS["low"][0][1]
+
+
+def test_gemini_alone_makes_gemini_the_first_choice(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "dummy")
+    for key in ("GROQ_API_KEY", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OMNIQUERY_PROVIDER"):
+        monkeypatch.delenv(key, raising=False)
+
+    assert lp.first_model() == lp.GEMINI_LITE_MODEL
+
+
+def test_no_keys_at_all_says_which_one_to_set(monkeypatch):
+    for key in ("GROQ_API_KEY", "GEMINI_API_KEY", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OMNIQUERY_PROVIDER"):
+        monkeypatch.delenv(key, raising=False)
+
+    with pytest.raises(lp.NoProviderConfigured, match="GROQ_API_KEY"):
+        lp.pick_llm("low")
+    assert lp.first_model() is None
 
 
 def test_cloudflare_resets_at_utc_midnight():

@@ -51,7 +51,7 @@ class _HideExpectedSkips(logging.Filter):
 logging.getLogger("langchain_core.callbacks.manager").addFilter(_HideExpectedSkips())
 
 
-def _is_transient(error: BaseException) -> bool:
+def is_transient(error: BaseException) -> bool:
     if isinstance(error, TimeoutError):
         return True
     text = f"{type(error).__name__} {error}".lower()
@@ -168,7 +168,7 @@ class _UsageCallback(BaseCallbackHandler):
     def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         # A 400 means our request was wrong, not that the model is down, so only
         # provider-side failures start a cooldown.
-        if _is_transient(error):
+        if is_transient(error):
             streak = _FAILURE_STREAK.get(self.model, 0) + 1
             _FAILURE_STREAK[self.model] = streak
             wait = min(COOLDOWN_SECONDS * 2 ** (streak - 1), MAX_COOLDOWN_SECONDS)
@@ -235,6 +235,21 @@ def _build(
     )
 
 
+_PROVIDER_KEYS = {
+    "groq": ("GROQ_API_KEY",),
+    "cloudflare": ("CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"),
+    "gemini": ("GEMINI_API_KEY",),
+}
+
+
+class NoProviderConfigured(RuntimeError):
+    """No model in the chain has its API key set."""
+
+
+def configured(provider: str) -> bool:
+    return all(os.environ.get(key) for key in _PROVIDER_KEYS[provider])
+
+
 def _chain_for(level: str) -> list[tuple[str, str, str | None]]:
     chain = CHAINS[level]
     # e.g. OMNIQUERY_PROVIDER=groq to test one provider on its own.
@@ -243,7 +258,19 @@ def _chain_for(level: str) -> list[tuple[str, str, str | None]]:
         chain = [entry for entry in chain if entry[0] == forced]
         if not chain:
             raise ValueError(f"OMNIQUERY_PROVIDER={forced} has no models for level {level!r}.")
+    # Only one free key is needed to start; providers without keys are left out.
+    chain = [entry for entry in chain if configured(entry[0])]
+    if not chain:
+        raise NoProviderConfigured("No model provider is configured. Set GROQ_API_KEY (free) in backend/.env.")
     return chain
+
+
+def first_model(level: str = "low") -> str | None:
+    """The model a call tries first with the keys that are set, or None if there are none."""
+    try:
+        return _chain_for(level)[0][1]
+    except (NoProviderConfigured, ValueError):
+        return None
 
 
 def pick_llm(level: str, temperature: float = 0.0, tools: list | None = None):

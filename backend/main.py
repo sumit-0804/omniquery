@@ -1,4 +1,5 @@
 import argparse
+import glob
 import sys
 from pathlib import Path
 
@@ -137,7 +138,9 @@ def _manage(args) -> int | None:
         if len(args.add_files) < 2:
             print("--add-files needs a name and at least one file.", file=sys.stderr)
             return 1
-        name, *paths = args.add_files
+        name, *patterns = args.add_files
+        # PowerShell and cmd pass "data/*.csv" through unexpanded, so expand it here.
+        paths = [p for pattern in patterns for p in (sorted(glob.glob(pattern)) or [pattern])]
         result = sources.add_files(name, paths)
         if not result:
             return _fail(result)

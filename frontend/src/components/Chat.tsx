@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { AGENTS, type Example } from "../agents";
 import type { Source } from "../api/client";
 import { Chip } from "./ui";
@@ -135,6 +135,10 @@ type ComposerProps = {
 export function Composer({ draft, onDraft, onSubmit, disabled, busy, sourceName }: ComposerProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const canSend = !disabled && !busy && draft.trim().length > 0;
+  // The box grows while typing; shrink it back once a sent question clears the draft.
+  useEffect(() => {
+    if (!draft && ref.current) ref.current.style.height = "auto";
+  }, [draft]);
   return (
     <div className="flex-none border-t border-line bg-surface px-4 pt-3 pb-3.5">
       <div className="mx-auto max-w-[880px]">
