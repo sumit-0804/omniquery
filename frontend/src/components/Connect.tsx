@@ -177,13 +177,14 @@ export function UploadFiles({ onAdded }: { onAdded: (source: Source) => void }) 
           setDragging(false);
           upload([...e.dataTransfer.files]);
         }}
-        className={`block cursor-pointer rounded-input border border-dashed px-3 py-3.5 text-center text-[11.5px] leading-[1.5] ${
+        className={`block cursor-pointer rounded-input border border-dashed px-3 py-3.5 text-center text-[11.5px] leading-[1.5] has-[input:focus]:border-accent ${
           dragging ? "border-accent bg-[#131720] text-ink-2" : "border-line-strong text-ink-4"
         }`}
       >
         Drop CSV, Parquet or JSON files, or <span className="text-accent underline">browse</span>
         <input
           ref={input}
+          id="oq-upload"
           type="file"
           multiple
           accept={ACCEPT}

@@ -51,21 +51,41 @@ export function ChatHeader({ source, tableCount, showToggle, onToggleSidebar, on
   );
 }
 
+export type ConnectTarget = "postgres" | "files";
+
 type EmptyProps = {
   source: Source | null;
   examples: Example[];
   onExample: (question: string) => void;
+  onConnect: (target: ConnectTarget) => void;
 };
 
-export function EmptyState({ source, examples, onExample }: EmptyProps) {
+const connectButton = "rounded-input border px-3.5 py-2 text-[13px] font-medium leading-none";
+
+export function EmptyState({ source, examples, onExample, onConnect }: EmptyProps) {
   if (!source) {
     return (
       <div className="mx-auto max-w-[720px] pt-[11vh]">
         <h1 className="text-[22px] font-semibold tracking-[-.02em]">Connect your data</h1>
         <p className="mt-[7px] max-w-[520px] leading-[1.6] text-ink-3">
-          Nothing is set up yet. Connect a Postgres database or upload CSV, Parquet or JSON files from the sidebar, then ask
-          questions about them in plain English.
+          Connect a Postgres database or upload CSV, Parquet or JSON files, then ask about them in plain English.
         </p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => onConnect("postgres")}
+            className={`${connectButton} border-accent bg-accent text-bg`}
+          >
+            Connect a database
+          </button>
+          <button
+            type="button"
+            onClick={() => onConnect("files")}
+            className={`${connectButton} border-line-strong bg-raised-3 text-ink-2`}
+          >
+            Upload files
+          </button>
+        </div>
       </div>
     );
   }

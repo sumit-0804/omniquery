@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { exampleQuestions } from "./agents";
 import { api, type Catalog as CatalogData, isApiError, type Source, WORKSPACE_ID } from "./api/client";
 import { Catalog } from "./components/Catalog";
-import { ChatHeader, Composer, EmptyState } from "./components/Chat";
+import { ChatHeader, Composer, type ConnectTarget, EmptyState } from "./components/Chat";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Rail } from "./components/Rail";
 import { Sidebar } from "./components/Sidebar";
@@ -31,6 +31,7 @@ export default function App() {
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [view, setView] = useState<"chat" | "catalog">("chat");
   const [outputsVersion, setOutputsVersion] = useState(0);
+  const [focusTarget, setFocusTarget] = useState<ConnectTarget | null>(null);
   const [draft, setDraft] = useState("");
   const { state: run, ask, resume, play } = useRun();
 
@@ -96,6 +97,15 @@ export default function App() {
   }, [activeId]);
 
   const examples = useMemo(() => exampleQuestions(catalog), [catalog]);
+
+  // The sidebar mounts only once it is open, so focus after that render rather than in the click.
+  useEffect(() => {
+    if (!focusTarget || !sidebarVisible) return;
+    const el = document.getElementById(focusTarget === "postgres" ? "oq-dsn" : "oq-upload");
+    (el?.closest("label") ?? el)?.scrollIntoView({ block: "center" });
+    el?.focus();
+    setFocusTarget(null);
+  }, [focusTarget, sidebarVisible]);
 
   const saveNote = async (path: string, text: string) => {
     if (!active) return;
@@ -171,7 +181,17 @@ export default function App() {
                   />
                 </ErrorBoundary>
               ) : (
-                sources && <EmptyState source={active} examples={examples} onExample={setDraft} />
+                sources && (
+                  <EmptyState
+                    source={active}
+                    examples={examples}
+                    onExample={setDraft}
+                    onConnect={(target) => {
+                      setSidebarOpen(true);
+                      setFocusTarget(target);
+                    }}
+                  />
+                )
               )}
             </div>
             <Composer
