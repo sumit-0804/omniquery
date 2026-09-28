@@ -52,6 +52,24 @@ flowchart TD
     NR --> UI
     F --> UI
     E4 --> UI
+
+    classDef entry fill:#e7eaef,stroke:#4b5563,color:#111
+    classDef router fill:#dbe5fd,stroke:#3b63c9,color:#111
+    classDef human fill:#fbe7c6,stroke:#b7791f,color:#111
+    classDef sql fill:#dbe5fd,stroke:#3b63c9,color:#111
+    classDef etl fill:#ebe0fd,stroke:#7c4fd6,color:#111
+    classDef ok fill:#e1f3cf,stroke:#4d8a1f,color:#111
+    classDef stop fill:#fbd9e0,stroke:#c2334f,color:#111
+
+    class Q,UI entry
+    class R router
+    class H,R2 human
+    class S1,S2,S3,S4,S5 sql
+    class S6 ok
+    class E1,E2,E3,E4 etl
+    class NR,F stop
+    style SQL fill:#eef3fe,stroke:#3b63c9,color:#111
+    style ETL fill:#f5effe,stroke:#7c4fd6,color:#111
 ```
 
 The agents are [LangGraph](https://github.com/langchain-ai/langgraph) graphs (`backend/agents/`). The backend is FastAPI, uploaded files and outputs live in DuckDB, and the frontend is React + Vite + Tailwind with Vega-Lite charts.
