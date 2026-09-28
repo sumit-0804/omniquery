@@ -1,0 +1,136 @@
+[
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "submitted",
+  "label": "Question submitted",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "router_node",
+  "label": "Choosing an agent",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.325,
+  "id": "router_node",
+  "label": "Choosing an agent",
+  "status": "done",
+  "detail": "etl, confidence 1.00"
+ },
+ {
+  "type": "routing",
+  "t": 1.325,
+  "agent": "etl",
+  "confidence": 1.0,
+  "source": "jev"
+ },
+ {
+  "type": "step",
+  "t": 1.368,
+  "id": "read_context",
+  "label": "Reading the source",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.369,
+  "id": "read_context",
+  "label": "Reading the source",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 20.019,
+  "id": "plan_etl",
+  "label": "Planning the job",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 20.213,
+  "id": "plan_etl",
+  "label": "Planning the job",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 20.861,
+  "id": "run_etl",
+  "label": "Running",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 20.862,
+  "id": "run_etl",
+  "label": "Running",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 20.89,
+  "id": "write_output",
+  "label": "Writing the output",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 20.89,
+  "id": "write_output",
+  "label": "Writing the output",
+  "status": "done"
+ },
+ {
+  "type": "output",
+  "t": 20.891,
+  "name": "users.parquet",
+  "table": "users",
+  "rows": 10,
+  "columns": [
+   "id",
+   "name",
+   "username",
+   "email",
+   "phone",
+   "website",
+   "address.street",
+   "address.suite",
+   "address.city",
+   "address.zipcode",
+   "address.geo.lat",
+   "address.geo.lng",
+   "company.name",
+   "company.catchPhrase",
+   "company.bs"
+  ]
+ },
+ {
+  "type": "answer",
+  "t": 20.891,
+  "text": "Saved users (10 rows, 15 columns) to C:\\Users\\sumit\\.omniquery\\outputs\\users.parquet. It is now a table in the workspace source.",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 20.892,
+  "text": "",
+  "done": true
+ },
+ {
+  "type": "provider",
+  "t": 20.892,
+  "provider": "groq",
+  "model": "qwen/qwen3.8-27b",
+  "fallback": false
+ },
+ {
+  "type": "done",
+  "t": 20.892,
+  "elapsed": 20.892,
+  "outcome": "answer"
+ }
+]

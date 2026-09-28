@@ -1,0 +1,108 @@
+@import "tailwindcss";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+/* Tokens from the design handoff (README "Design tokens"). */
+@theme {
+  --color-bg: #0e0f12;
+  --color-surface: #111317;
+  --color-panel: #121418;
+  --color-raised: #14161a;
+  --color-raised-2: #15181d;
+  --color-raised-3: #1b1e23;
+  --color-table-head: #191c21;
+  --color-line: #23272e;
+  --color-line-strong: #2d323a;
+  --color-divider: #1a1d22;
+  --color-ink: #e7eaef;
+  --color-ink-2: #c8d0dc;
+  --color-ink-3: #98a1ad;
+  --color-ink-4: #8a939f;
+  --color-ink-5: #7b848f;
+  --color-accent: #7aa2f7;
+  --color-success: #9ece6a;
+  --color-warn: #e0af68;
+  --color-error: #f7768e;
+  --color-etl: #bb9af7;
+  --color-chart: #7dcfff;
+
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --radius-chip: 3px;
+  --radius-control: 4px;
+  --radius-input: 5px;
+  --radius-row: 6px;
+  --radius-card: 8px;
+
+  --animate-oq-sweep: oq-sweep 1.15s linear infinite;
+  --animate-oq-pulse: oq-pulse 1.1s ease-in-out infinite;
+  --animate-oq-caret: oq-caret 1s steps(1) infinite;
+  --animate-oq-in: oq-in 0.18s ease-out both;
+  --animate-oq-flash: oq-flash 1.6s;
+
+  @keyframes oq-sweep {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(400%); }
+  }
+  @keyframes oq-pulse {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 1; }
+  }
+  @keyframes oq-caret {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  @keyframes oq-in {
+    0% { opacity: 0; transform: translateY(3px); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes oq-flash {
+    0% { background: rgba(158, 206, 106, 0.22); }
+    100% { background: transparent; }
+  }
+}
+
+@layer base {
+  html, body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: var(--color-bg); }
+  ::-webkit-scrollbar-thumb { background: var(--color-line-strong); border: 3px solid var(--color-bg); border-radius: 6px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3c434d; }
+}
+
+@layer components {
+  .oq-answer p { margin: 0 0 0.6em; }
+  .oq-answer > :last-child { margin-bottom: 0; }
+  .oq-answer strong { font-weight: 600; }
+  .oq-answer ul, .oq-answer ol { margin: 0 0 0.6em; padding-left: 1.3em; }
+  .oq-answer ul { list-style: disc; }
+  .oq-answer ol { list-style: decimal; }
+  .oq-answer code { font-family: var(--font-mono); font-size: 0.85em; color: var(--color-ink-2); }
+  /* The caret sits at the end of the last line, inside the last paragraph or list item. */
+  .oq-typing > p:last-child::after,
+  .oq-typing > :is(ul, ol):last-child > li:last-child::after {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 16px;
+    margin-left: 3px;
+    vertical-align: -2px;
+    background: var(--color-accent);
+    animation: var(--animate-oq-caret);
+  }
+}

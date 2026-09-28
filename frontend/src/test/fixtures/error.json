@@ -1,0 +1,254 @@
+[
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "submitted",
+  "label": "Question submitted",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "router_node",
+  "label": "Choosing an agent",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.003,
+  "id": "router_node",
+  "label": "Choosing an agent",
+  "status": "done",
+  "detail": "sql, confidence 0.95"
+ },
+ {
+  "type": "routing",
+  "t": 0.003,
+  "agent": "sql",
+  "confidence": 0.95,
+  "source": "jev"
+ },
+ {
+  "type": "step",
+  "t": 0.007,
+  "id": "prompt_query_context",
+  "label": "Selecting tables",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.011,
+  "id": "prompt_query_context",
+  "label": "Selecting tables",
+  "status": "done",
+  "detail": "rides"
+ },
+ {
+  "type": "step",
+  "t": 0.013,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.015,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "done"
+ },
+ {
+  "type": "sql",
+  "t": 0.015,
+  "query": "SELECT avg(r.fare_amount) FROM rides r",
+  "attempt": 1,
+  "notes": []
+ },
+ {
+  "type": "step",
+  "t": 0.015,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.015,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "done"
+ },
+ {
+  "type": "judge",
+  "t": 0.016,
+  "safe": true,
+  "comments": ""
+ },
+ {
+  "type": "step",
+  "t": 0.016,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.016,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "failed"
+ },
+ {
+  "type": "retry",
+  "t": 0.016,
+  "attempt": 1,
+  "of": 3,
+  "code": "42703",
+  "detail": "42703: column r.fare_amount does not exist"
+ },
+ {
+  "type": "step",
+  "t": 0.016,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.016,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "done"
+ },
+ {
+  "type": "sql",
+  "t": 0.016,
+  "query": "SELECT avg(r.fare_amount) FROM rides r",
+  "attempt": 2,
+  "notes": []
+ },
+ {
+  "type": "step",
+  "t": 0.017,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.017,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "done"
+ },
+ {
+  "type": "judge",
+  "t": 0.017,
+  "safe": true,
+  "comments": ""
+ },
+ {
+  "type": "step",
+  "t": 0.017,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.017,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "failed"
+ },
+ {
+  "type": "retry",
+  "t": 0.017,
+  "attempt": 2,
+  "of": 3,
+  "code": "42703",
+  "detail": "42703: column r.fare_amount does not exist"
+ },
+ {
+  "type": "step",
+  "t": 0.017,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.017,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "done"
+ },
+ {
+  "type": "sql",
+  "t": 0.018,
+  "query": "SELECT avg(r.fare_amount) FROM rides r",
+  "attempt": 3,
+  "notes": []
+ },
+ {
+  "type": "step",
+  "t": 0.018,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.018,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "done"
+ },
+ {
+  "type": "judge",
+  "t": 0.018,
+  "safe": true,
+  "comments": ""
+ },
+ {
+  "type": "step",
+  "t": 0.018,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.018,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "failed"
+ },
+ {
+  "type": "step",
+  "t": 0.018,
+  "id": "report_failure",
+  "label": "Reporting the failure",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.018,
+  "id": "report_failure",
+  "label": "Reporting the failure",
+  "status": "done"
+ },
+ {
+  "type": "error",
+  "t": 0.018,
+  "code": "db.query_failed",
+  "detail": "42703: column r.fare_amount does not exist",
+  "attempts": 3
+ },
+ {
+  "type": "done",
+  "t": 0.019,
+  "elapsed": 0.019,
+  "outcome": "error"
+ }
+]

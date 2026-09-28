@@ -1,0 +1,719 @@
+[
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "ask_human",
+  "label": "Asking you",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.002,
+  "id": "ask_human",
+  "label": "Asking you",
+  "status": "done"
+ },
+ {
+  "type": "routing",
+  "t": 0.002,
+  "agent": "sql",
+  "confidence": 1.0,
+  "source": "human"
+ },
+ {
+  "type": "step",
+  "t": 0.006,
+  "id": "prompt_query_context",
+  "label": "Selecting tables",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.007,
+  "id": "prompt_query_context",
+  "label": "Selecting tables",
+  "status": "done",
+  "detail": "payments, ratings, rides, users, vehicles"
+ },
+ {
+  "type": "step",
+  "t": 0.967,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.122,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "done"
+ },
+ {
+  "type": "sql",
+  "t": 1.123,
+  "query": "SELECT * FROM users LIMIT 25",
+  "attempt": 1,
+  "notes": []
+ },
+ {
+  "type": "step",
+  "t": 1.123,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.123,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "done"
+ },
+ {
+  "type": "judge",
+  "t": 1.123,
+  "safe": true,
+  "comments": ""
+ },
+ {
+  "type": "step",
+  "t": 1.156,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.157,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 1.188,
+  "id": "execute_sql",
+  "label": "Executing",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.189,
+  "id": "execute_sql",
+  "label": "Executing",
+  "status": "done"
+ },
+ {
+  "type": "rows",
+  "t": 1.19,
+  "columns": [
+   "user_id",
+   "first_name",
+   "last_name",
+   "email",
+   "phone",
+   "city",
+   "province",
+   "user_type",
+   "signup_date",
+   "is_active"
+  ],
+  "rows": [
+   [
+    1,
+    "Danielle",
+    "Johnson",
+    "user1@example.com",
+    "+13567729816",
+    "Halifax",
+    "NS",
+    "rider",
+    "2025-05-25",
+    true
+   ],
+   [
+    2,
+    "Joshua",
+    "Walker",
+    "user2@example.com",
+    "+19222900764",
+    "Vancouver",
+    "BC",
+    "rider",
+    "2025-05-04",
+    true
+   ],
+   [
+    3,
+    "Jill",
+    "Rhodes",
+    "user3@example.com",
+    "+12900432998",
+    "Winnipeg",
+    "MB",
+    "rider",
+    "2026-05-24",
+    true
+   ],
+   [
+    4,
+    "Patricia",
+    "Miller",
+    "user4@example.com",
+    "+19812397600",
+    "Montreal",
+    "QC",
+    "rider",
+    "2026-05-21",
+    true
+   ],
+   [
+    5,
+    "Robert",
+    "Johnson",
+    "user5@example.com",
+    "+16892737056",
+    "Winnipeg",
+    "MB",
+    "rider",
+    "2024-04-15",
+    true
+   ],
+   [
+    6,
+    "Jeffery",
+    "Wagner",
+    "user6@example.com",
+    "+15071916904",
+    "Vancouver",
+    "BC",
+    "rider",
+    "2026-05-10",
+    true
+   ],
+   [
+    7,
+    "Anthony",
+    "Gonzalez",
+    "user7@example.com",
+    "+18353264641",
+    "Winnipeg",
+    "MB",
+    "driver",
+    "2024-09-14",
+    true
+   ],
+   [
+    8,
+    "Debra",
+    "Gardner",
+    "user8@example.com",
+    "+14334938378",
+    "Halifax",
+    "NS",
+    "rider",
+    "2026-05-13",
+    false
+   ],
+   [
+    9,
+    "Jeffrey",
+    "Lawrence",
+    "user9@example.com",
+    "+16764705401",
+    "Montreal",
+    "QC",
+    "rider",
+    "2024-01-21",
+    true
+   ],
+   [
+    10,
+    "Lisa",
+    "Smith",
+    "user10@example.com",
+    "+17009385667",
+    "Edmonton",
+    "AB",
+    "driver",
+    "2025-08-09",
+    true
+   ],
+   [
+    11,
+    "Linda",
+    "Wolfe",
+    "user11@example.com",
+    "+17719164281",
+    "Halifax",
+    "NS",
+    "rider",
+    "2026-05-21",
+    true
+   ],
+   [
+    12,
+    "Matthew",
+    "Moore",
+    "user12@example.com",
+    "+12423511939",
+    "Toronto",
+    "ON",
+    "rider",
+    "2023-12-11",
+    true
+   ],
+   [
+    13,
+    "Susan",
+    "Rogers",
+    "user13@example.com",
+    "+13914604319",
+    "Calgary",
+    "AB",
+    "rider",
+    "2024-08-30",
+    true
+   ],
+   [
+    14,
+    "Christopher",
+    "Davis",
+    "user14@example.com",
+    "+17776590939",
+    "Vancouver",
+    "BC",
+    "rider",
+    "2023-02-08",
+    true
+   ],
+   [
+    15,
+    "Melanie",
+    "Munoz",
+    "user15@example.com",
+    "+18081568150",
+    "Ottawa",
+    "ON",
+    "rider",
+    "2023-05-14",
+    true
+   ],
+   [
+    16,
+    "Lindsay",
+    "Blair",
+    "user16@example.com",
+    "+13496060167",
+    "Vancouver",
+    "BC",
+    "rider",
+    "2024-06-16",
+    true
+   ],
+   [
+    17,
+    "Amanda",
+    "Dudley",
+    "user17@example.com",
+    "+14238171141",
+    "Calgary",
+    "AB",
+    "rider",
+    "2024-06-25",
+    true
+   ],
+   [
+    18,
+    "Nicholas",
+    "Arnold",
+    "user18@example.com",
+    "+19395907656",
+    "Winnipeg",
+    "MB",
+    "rider",
+    "2024-12-03",
+    true
+   ],
+   [
+    19,
+    "Maria",
+    "Montgomery",
+    "user19@example.com",
+    "+16486879539",
+    "Ottawa",
+    "ON",
+    "driver",
+    "2026-01-09",
+    true
+   ],
+   [
+    20,
+    "Michelle",
+    "Ray",
+    "user20@example.com",
+    "+14783009621",
+    "Edmonton",
+    "AB",
+    "rider",
+    "2025-11-17",
+    true
+   ],
+   [
+    21,
+    "Janet",
+    "Williams",
+    "user21@example.com",
+    "+14216176949",
+    "Calgary",
+    "AB",
+    "rider",
+    "2025-05-07",
+    true
+   ],
+   [
+    22,
+    "Jeremy",
+    "Roberts",
+    "user22@example.com",
+    "+16116565613",
+    "Halifax",
+    "NS",
+    "rider",
+    "2023-12-27",
+    true
+   ],
+   [
+    23,
+    "Christopher",
+    "Hall",
+    "user23@example.com",
+    "+17095493035",
+    "Vancouver",
+    "BC",
+    "rider",
+    "2025-10-18",
+    true
+   ],
+   [
+    24,
+    "Craig",
+    "Ramirez",
+    "user24@example.com",
+    "+19462026208",
+    "Toronto",
+    "ON",
+    "rider",
+    "2023-11-03",
+    true
+   ],
+   [
+    25,
+    "Cynthia",
+    "Diaz",
+    "user25@example.com",
+    "+13670036982",
+    "Halifax",
+    "NS",
+    "driver",
+    "2025-12-30",
+    true
+   ]
+  ],
+  "row_count": 25,
+  "truncated": false,
+  "shown": 25
+ },
+ {
+  "type": "step",
+  "t": 33.595,
+  "id": "represent_final_answer",
+  "label": "Composing the answer",
+  "status": "active"
+ },
+ {
+  "type": "answer",
+  "t": 33.688,
+  "text": "The",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.689,
+  "text": " query",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.691,
+  "text": " result",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.692,
+  "text": " is",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.694,
+  "text": " valid",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.696,
+  "text": " and",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.698,
+  "text": " contains",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.7,
+  "text": " no",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.703,
+  "text": " errors",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.705,
+  "text": ".",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.707,
+  "text": " It",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.709,
+  "text": " lists",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.71,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.712,
+  "text": "2",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.715,
+  "text": "5",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.716,
+  "text": " users",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.718,
+  "text": " with",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.725,
+  "text": " their",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.726,
+  "text": " details",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.726,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.727,
+  "text": " including",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.73,
+  "text": " names",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.734,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.734,
+  "text": " contact",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.735,
+  "text": " information",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.739,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.739,
+  "text": " location",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.739,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.74,
+  "text": " user",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.741,
+  "text": " type",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.743,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.745,
+  "text": " signup",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.747,
+  "text": " date",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.748,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.752,
+  "text": " and",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.753,
+  "text": " active",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.755,
+  "text": " status",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.757,
+  "text": ".",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.759,
+  "text": " No",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.761,
+  "text": " fixes",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.763,
+  "text": " are",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.766,
+  "text": " needed",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 33.767,
+  "text": ".",
+  "done": false
+ },
+ {
+  "type": "step",
+  "t": 33.771,
+  "id": "represent_final_answer",
+  "label": "Composing the answer",
+  "status": "done"
+ },
+ {
+  "type": "answer",
+  "t": 33.772,
+  "text": "",
+  "done": true
+ },
+ {
+  "type": "provider",
+  "t": 33.772,
+  "provider": "groq",
+  "model": "qwen/qwen3.8-27b",
+  "fallback": false
+ },
+ {
+  "type": "done",
+  "t": 33.772,
+  "elapsed": 33.772,
+  "outcome": "answer"
+ }
+]

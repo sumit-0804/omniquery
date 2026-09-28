@@ -1,0 +1,44 @@
+[
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "ask_human",
+  "label": "Asking you",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.152,
+  "id": "ask_human",
+  "label": "Asking you",
+  "status": "done"
+ },
+ {
+  "type": "clarify",
+  "t": 1.153,
+  "thread_id": "c8c25c964459428eb68309d8096b5c96",
+  "question": "Which of these should handle your request?",
+  "why": "The request is too vague to act on as written. Ask me if you're not sure.",
+  "explanation": "Since you didn't specify what needs fixing, here is what each option would do: **sql** would look at your existing data to find or correct errors within the database itself. **etl** would take data from an outside source, clean or change it, and save it as a new file. **chart** would simply draw a picture of your data, which usually isn't the right tool for making corrections.",
+  "options": [
+   {
+    "key": "sql",
+    "label": "Query, aggregate, or analyse data already stored in the database"
+   },
+   {
+    "key": "etl",
+    "label": "Extract data from a URL or API, or transform data (filter, reshape, clean, join, convert) and save the result as a new file"
+   },
+   {
+    "key": "chart",
+    "label": "Draw a chart, plot or graph of data from the database; only when the user asks for a visual"
+   }
+  ]
+ },
+ {
+  "type": "done",
+  "t": 1.153,
+  "elapsed": 1.153,
+  "outcome": "clarify"
+ }
+]

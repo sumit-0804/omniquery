@@ -1,0 +1,273 @@
+[
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "submitted",
+  "label": "Question submitted",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "router_node",
+  "label": "Choosing an agent",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.005,
+  "id": "router_node",
+  "label": "Choosing an agent",
+  "status": "done",
+  "detail": "sql, confidence 0.95"
+ },
+ {
+  "type": "routing",
+  "t": 0.005,
+  "agent": "sql",
+  "confidence": 0.95,
+  "source": "jev"
+ },
+ {
+  "type": "step",
+  "t": 0.008,
+  "id": "prompt_query_context",
+  "label": "Selecting tables",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.008,
+  "id": "prompt_query_context",
+  "label": "Selecting tables",
+  "status": "done",
+  "detail": "rides"
+ },
+ {
+  "type": "step",
+  "t": 0.01,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.01,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "done"
+ },
+ {
+  "type": "sql",
+  "t": 0.011,
+  "query": "SELECT avg(r.fare_amount) FROM rides r",
+  "attempt": 1,
+  "notes": []
+ },
+ {
+  "type": "step",
+  "t": 0.019,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.02,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "done"
+ },
+ {
+  "type": "judge",
+  "t": 0.021,
+  "safe": true,
+  "comments": ""
+ },
+ {
+  "type": "step",
+  "t": 0.022,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.022,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "failed"
+ },
+ {
+  "type": "retry",
+  "t": 0.022,
+  "attempt": 1,
+  "of": 3,
+  "code": "42703",
+  "detail": "42703: column r.fare_amount does not exist"
+ },
+ {
+  "type": "step",
+  "t": 0.022,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.022,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "done"
+ },
+ {
+  "type": "sql",
+  "t": 0.023,
+  "query": "SELECT round(avg(fare), 2) AS avg_fare FROM rides",
+  "attempt": 2,
+  "notes": []
+ },
+ {
+  "type": "step",
+  "t": 0.023,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.023,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "done"
+ },
+ {
+  "type": "judge",
+  "t": 0.023,
+  "safe": true,
+  "comments": ""
+ },
+ {
+  "type": "step",
+  "t": 0.023,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.023,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 0.023,
+  "id": "execute_sql",
+  "label": "Executing",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.023,
+  "id": "execute_sql",
+  "label": "Executing",
+  "status": "done"
+ },
+ {
+  "type": "rows",
+  "t": 0.023,
+  "columns": [
+   "avg_fare"
+  ],
+  "rows": [
+   [
+    64.21
+   ]
+  ],
+  "row_count": 1,
+  "truncated": false,
+  "shown": 1
+ },
+ {
+  "type": "step",
+  "t": 0.024,
+  "id": "represent_final_answer",
+  "label": "Composing the answer",
+  "status": "active"
+ },
+ {
+  "type": "answer",
+  "t": 0.024,
+  "text": "The",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 0.024,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 0.024,
+  "text": "average",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 0.024,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 0.024,
+  "text": "fare",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 0.025,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 0.025,
+  "text": "is",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 0.025,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 0.025,
+  "text": "$64.21.",
+  "done": false
+ },
+ {
+  "type": "step",
+  "t": 0.025,
+  "id": "represent_final_answer",
+  "label": "Composing the answer",
+  "status": "done"
+ },
+ {
+  "type": "answer",
+  "t": 0.026,
+  "text": "",
+  "done": true
+ },
+ {
+  "type": "done",
+  "t": 0.026,
+  "elapsed": 0.026,
+  "outcome": "answer"
+ }
+]

@@ -1,0 +1,613 @@
+[
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "submitted",
+  "label": "Question submitted",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "router_node",
+  "label": "Choosing an agent",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.569,
+  "id": "router_node",
+  "label": "Choosing an agent",
+  "status": "done",
+  "detail": "sql, confidence 0.99"
+ },
+ {
+  "type": "routing",
+  "t": 0.57,
+  "agent": "sql",
+  "confidence": 0.99,
+  "source": "jev"
+ },
+ {
+  "type": "step",
+  "t": 0.574,
+  "id": "prompt_query_context",
+  "label": "Selecting tables",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.575,
+  "id": "prompt_query_context",
+  "label": "Selecting tables",
+  "status": "done",
+  "detail": "payments, ratings, rides, users, vehicles"
+ },
+ {
+  "type": "step",
+  "t": 1.467,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.66,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "done"
+ },
+ {
+  "type": "sql",
+  "t": 1.66,
+  "query": "SELECT cancellation_reason, COUNT(*) AS ride_count FROM rides WHERE status = 'cancelled' GROUP BY cancellation_reason LIMIT 25",
+  "attempt": 1,
+  "notes": []
+ },
+ {
+  "type": "step",
+  "t": 1.66,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.661,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "done"
+ },
+ {
+  "type": "judge",
+  "t": 1.661,
+  "safe": true,
+  "comments": ""
+ },
+ {
+  "type": "step",
+  "t": 1.695,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.696,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 1.73,
+  "id": "execute_sql",
+  "label": "Executing",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 1.731,
+  "id": "execute_sql",
+  "label": "Executing",
+  "status": "done"
+ },
+ {
+  "type": "rows",
+  "t": 1.732,
+  "columns": [
+   "cancellation_reason",
+   "ride_count"
+  ],
+  "rows": [
+   [
+    "rider_cancelled",
+    400
+   ],
+   [
+    "rider_no_show",
+    376
+   ],
+   [
+    "driver_too_far",
+    345
+   ],
+   [
+    "other",
+    416
+   ],
+   [
+    "driver_cancelled",
+    388
+   ]
+  ],
+  "row_count": 5,
+  "truncated": false,
+  "shown": 5
+ },
+ {
+  "type": "step",
+  "t": 2.67,
+  "id": "represent_final_answer",
+  "label": "Composing the answer",
+  "status": "active"
+ },
+ {
+  "type": "answer",
+  "t": 2.678,
+  "text": "The",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.679,
+  "text": " number",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.681,
+  "text": " of",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.684,
+  "text": " rides",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.685,
+  "text": " cancelled",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.686,
+  "text": " for",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.688,
+  "text": " each",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.691,
+  "text": " reason",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.692,
+  "text": " is",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.694,
+  "text": " as",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.696,
+  "text": " follows",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.7,
+  "text": ":",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.7,
+  "text": "\n\n",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.702,
+  "text": "*",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.703,
+  "text": "  ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.708,
+  "text": " **",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.708,
+  "text": "Other",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.709,
+  "text": ":**",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.713,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.714,
+  "text": "4",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.716,
+  "text": "1",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.718,
+  "text": "6",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.72,
+  "text": "\n",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.72,
+  "text": "*",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.722,
+  "text": "  ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.724,
+  "text": " **",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.726,
+  "text": "R",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.73,
+  "text": "ider",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.73,
+  "text": " Cancel",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.731,
+  "text": "led",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.733,
+  "text": ":**",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.736,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.738,
+  "text": "4",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.741,
+  "text": "0",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.742,
+  "text": "0",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.743,
+  "text": "\n",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.749,
+  "text": "*",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.749,
+  "text": "  ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.75,
+  "text": " **",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.751,
+  "text": "Driver",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.753,
+  "text": " Cancel",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.755,
+  "text": "led",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.761,
+  "text": ":**",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.761,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.762,
+  "text": "3",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.764,
+  "text": "8",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.764,
+  "text": "8",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.769,
+  "text": "\n",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.769,
+  "text": "*",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.771,
+  "text": "  ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.772,
+  "text": " **",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.774,
+  "text": "R",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.775,
+  "text": "ider",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.781,
+  "text": " No",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.782,
+  "text": " Show",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.782,
+  "text": ":**",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.783,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.784,
+  "text": "3",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.786,
+  "text": "7",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.788,
+  "text": "6",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.791,
+  "text": "\n",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.792,
+  "text": "*",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.795,
+  "text": "  ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.796,
+  "text": " **",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.798,
+  "text": "Driver",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.801,
+  "text": " Too",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.802,
+  "text": " Far",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.804,
+  "text": ":**",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.805,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.808,
+  "text": "3",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.809,
+  "text": "4",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 2.81,
+  "text": "5",
+  "done": false
+ },
+ {
+  "type": "step",
+  "t": 2.817,
+  "id": "represent_final_answer",
+  "label": "Composing the answer",
+  "status": "done"
+ },
+ {
+  "type": "answer",
+  "t": 2.818,
+  "text": "",
+  "done": true
+ },
+ {
+  "type": "provider",
+  "t": 2.819,
+  "provider": "groq",
+  "model": "qwen/qwen3.8-27b",
+  "fallback": false
+ },
+ {
+  "type": "done",
+  "t": 2.819,
+  "elapsed": 2.819,
+  "outcome": "answer"
+ }
+]

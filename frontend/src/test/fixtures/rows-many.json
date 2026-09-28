@@ -1,0 +1,968 @@
+[
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "submitted",
+  "label": "Question submitted",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 0.0,
+  "id": "router_node",
+  "label": "Choosing an agent",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.988,
+  "id": "router_node",
+  "label": "Choosing an agent",
+  "status": "done",
+  "detail": "sql, confidence 0.99"
+ },
+ {
+  "type": "routing",
+  "t": 0.988,
+  "agent": "sql",
+  "confidence": 0.99,
+  "source": "jev"
+ },
+ {
+  "type": "step",
+  "t": 0.993,
+  "id": "prompt_query_context",
+  "label": "Selecting tables",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 0.993,
+  "id": "prompt_query_context",
+  "label": "Selecting tables",
+  "status": "done",
+  "detail": "payments, ratings, rides, users, vehicles + 1 notes"
+ },
+ {
+  "type": "step",
+  "t": 3.457,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 3.627,
+  "id": "generate_sql",
+  "label": "Generating SQL",
+  "status": "done"
+ },
+ {
+  "type": "sql",
+  "t": 3.627,
+  "query": "SELECT ride_id, status, fare FROM rides ORDER BY requested_at DESC LIMIT 60",
+  "attempt": 1,
+  "notes": [
+   "rides"
+  ]
+ },
+ {
+  "type": "step",
+  "t": 3.639,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 3.64,
+  "id": "check_readonly",
+  "label": "Checking the query is read-only",
+  "status": "done"
+ },
+ {
+  "type": "judge",
+  "t": 3.64,
+  "safe": true,
+  "comments": ""
+ },
+ {
+  "type": "step",
+  "t": 3.687,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 3.687,
+  "id": "validate_sql",
+  "label": "Validating the query",
+  "status": "done"
+ },
+ {
+  "type": "step",
+  "t": 3.858,
+  "id": "execute_sql",
+  "label": "Executing",
+  "status": "active"
+ },
+ {
+  "type": "step",
+  "t": 3.86,
+  "id": "execute_sql",
+  "label": "Executing",
+  "status": "done"
+ },
+ {
+  "type": "rows",
+  "t": 3.861,
+  "columns": [
+   "ride_id",
+   "status",
+   "fare"
+  ],
+  "rows": [
+   [
+    8395,
+    "completed",
+    66.05
+   ],
+   [
+    9050,
+    "completed",
+    81.98
+   ],
+   [
+    16454,
+    "completed",
+    18.54
+   ],
+   [
+    7349,
+    "completed",
+    41.59
+   ],
+   [
+    2187,
+    "in_progress",
+    0.0
+   ],
+   [
+    866,
+    "completed",
+    54.43
+   ],
+   [
+    12242,
+    "completed",
+    34.41
+   ],
+   [
+    9428,
+    "cancelled",
+    0.0
+   ],
+   [
+    3347,
+    "completed",
+    36.84
+   ],
+   [
+    7398,
+    "completed",
+    50.97
+   ],
+   [
+    17917,
+    "cancelled",
+    0.0
+   ],
+   [
+    7266,
+    "requested",
+    0.0
+   ],
+   [
+    12677,
+    "completed",
+    59.31
+   ],
+   [
+    15266,
+    "completed",
+    102.77
+   ],
+   [
+    14659,
+    "completed",
+    25.21
+   ],
+   [
+    4367,
+    "completed",
+    78.07
+   ],
+   [
+    5352,
+    "cancelled",
+    0.0
+   ],
+   [
+    9133,
+    "completed",
+    40.88
+   ],
+   [
+    8610,
+    "in_progress",
+    0.0
+   ],
+   [
+    6141,
+    "completed",
+    35.43
+   ],
+   [
+    3284,
+    "completed",
+    54.7
+   ],
+   [
+    3535,
+    "completed",
+    18.59
+   ],
+   [
+    18580,
+    "completed",
+    45.21
+   ],
+   [
+    12482,
+    "completed",
+    23.32
+   ],
+   [
+    9708,
+    "completed",
+    67.12
+   ],
+   [
+    6305,
+    "completed",
+    117.83
+   ],
+   [
+    17736,
+    "completed",
+    88.91
+   ],
+   [
+    3779,
+    "completed",
+    93.48
+   ],
+   [
+    11937,
+    "completed",
+    90.02
+   ],
+   [
+    1964,
+    "completed",
+    26.7
+   ],
+   [
+    15736,
+    "completed",
+    32.1
+   ],
+   [
+    12826,
+    "cancelled",
+    0.0
+   ],
+   [
+    1641,
+    "completed",
+    75.65
+   ],
+   [
+    15782,
+    "completed",
+    104.35
+   ],
+   [
+    256,
+    "completed",
+    108.79
+   ],
+   [
+    14010,
+    "completed",
+    70.87
+   ],
+   [
+    8075,
+    "completed",
+    39.09
+   ],
+   [
+    11419,
+    "completed",
+    71.37
+   ],
+   [
+    2801,
+    "completed",
+    148.69
+   ],
+   [
+    17288,
+    "completed",
+    43.18
+   ],
+   [
+    4557,
+    "completed",
+    96.13
+   ],
+   [
+    10344,
+    "requested",
+    0.0
+   ],
+   [
+    9593,
+    "completed",
+    25.05
+   ],
+   [
+    5105,
+    "cancelled",
+    0.0
+   ],
+   [
+    4313,
+    "completed",
+    37.92
+   ],
+   [
+    18730,
+    "completed",
+    8.67
+   ],
+   [
+    13989,
+    "completed",
+    163.08
+   ],
+   [
+    18916,
+    "completed",
+    80.9
+   ],
+   [
+    3829,
+    "completed",
+    25.28
+   ],
+   [
+    170,
+    "completed",
+    39.92
+   ],
+   [
+    3586,
+    "completed",
+    42.91
+   ],
+   [
+    18092,
+    "completed",
+    57.92
+   ],
+   [
+    17930,
+    "cancelled",
+    0.0
+   ],
+   [
+    6694,
+    "completed",
+    48.63
+   ],
+   [
+    19602,
+    "completed",
+    73.63
+   ],
+   [
+    15289,
+    "in_progress",
+    0.0
+   ],
+   [
+    3598,
+    "completed",
+    34.5
+   ],
+   [
+    6143,
+    "completed",
+    74.51
+   ],
+   [
+    14527,
+    "completed",
+    44.49
+   ],
+   [
+    9396,
+    "cancelled",
+    0.0
+   ]
+  ],
+  "row_count": 60,
+  "truncated": false,
+  "shown": 25
+ },
+ {
+  "type": "step",
+  "t": 4.844,
+  "id": "represent_final_answer",
+  "label": "Composing the answer",
+  "status": "active"
+ },
+ {
+  "type": "answer",
+  "t": 4.881,
+  "text": "The",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.882,
+  "text": " ",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.884,
+  "text": "6",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.886,
+  "text": "0",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.889,
+  "text": " most",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.891,
+  "text": " recent",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.892,
+  "text": " rides",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.894,
+  "text": " include",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.897,
+  "text": " a",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.899,
+  "text": " mix",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.9,
+  "text": " of",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.902,
+  "text": " statuses",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.904,
+  "text": ":",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.906,
+  "text": " completed",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.909,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.911,
+  "text": " in",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.912,
+  "text": "_progress",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.915,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.916,
+  "text": " cancelled",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.926,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.926,
+  "text": " and",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.926,
+  "text": " requested",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.928,
+  "text": ".",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.929,
+  "text": "\n\n",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.929,
+  "text": "-",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.933,
+  "text": " **",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.935,
+  "text": "Completed",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.936,
+  "text": " rides",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.936,
+  "text": "**",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.939,
+  "text": " have",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.942,
+  "text": " fares",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.942,
+  "text": " ranging",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.944,
+  "text": " from",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.947,
+  "text": " $",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.947,
+  "text": "1",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.952,
+  "text": "8",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.952,
+  "text": ".",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.954,
+  "text": "5",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.956,
+  "text": "4",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.958,
+  "text": " to",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.96,
+  "text": " $",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.962,
+  "text": "1",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.964,
+  "text": "0",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.966,
+  "text": "2",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.968,
+  "text": ".",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.969,
+  "text": "7",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.971,
+  "text": "7",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.973,
+  "text": ".",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.975,
+  "text": "\n",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.977,
+  "text": "-",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.979,
+  "text": " **",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.981,
+  "text": "In",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.982,
+  "text": "-progress",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.985,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.987,
+  "text": " cancelled",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.989,
+  "text": ",",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.991,
+  "text": " and",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.994,
+  "text": " requested",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.995,
+  "text": " rides",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 4.997,
+  "text": "**",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.0,
+  "text": " all",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.003,
+  "text": " show",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.004,
+  "text": " a",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.007,
+  "text": " fare",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.009,
+  "text": " of",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.012,
+  "text": " $",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.013,
+  "text": "0",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.016,
+  "text": ".",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.018,
+  "text": "0",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.02,
+  "text": "0",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.022,
+  "text": ".",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.025,
+  "text": "\n\n",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.029,
+  "text": "The",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.03,
+  "text": " data",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.031,
+  "text": " confirms",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.033,
+  "text": " that",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.036,
+  "text": " only",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.038,
+  "text": " completed",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.04,
+  "text": " rides",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.043,
+  "text": " have",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.045,
+  "text": " non",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.047,
+  "text": "-zero",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.049,
+  "text": " fares",
+  "done": false
+ },
+ {
+  "type": "answer",
+  "t": 5.052,
+  "text": ".",
+  "done": false
+ },
+ {
+  "type": "step",
+  "t": 5.058,
+  "id": "represent_final_answer",
+  "label": "Composing the answer",
+  "status": "done"
+ },
+ {
+  "type": "answer",
+  "t": 5.06,
+  "text": "",
+  "done": true
+ },
+ {
+  "type": "provider",
+  "t": 5.06,
+  "provider": "groq",
+  "model": "qwen/qwen3.8-27b",
+  "fallback": false
+ },
+ {
+  "type": "done",
+  "t": 5.061,
+  "elapsed": 5.061,
+  "outcome": "answer"
+ }
+]
