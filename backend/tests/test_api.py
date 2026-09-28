@@ -148,6 +148,110 @@ def test_no_usable_model_is_a_clear_error_not_a_server_fault(client, agents, mon
     assert events[-1]["outcome"] == "error"
 
 
+@pytest.fixture
+def demo(monkeypatch):
+    monkeypatch.setenv("OMNIQUERY_DEMO", "1")
+
+
+BLOCKED_IN_DEMO = [
+    ("post", "/api/chat", {"json": {"q": "hi", "source": "nope"}}),  # unknown source: no model is called
+    ("post", "/api/sources/test", {"json": {"dsn": "postgresql://u:p@h/d"}}),
+    ("post", "/api/sources/postgres", {"json": {"dsn": "postgresql://u:p@h/d", "name": "x"}}),
+    ("post", "/api/sources/files", {"data": {"name": "x"}, "files": [("files", ("a.csv", b"a\n1\n", "text/csv"))]}),
+    ("delete", "/api/sources/demo", {}),
+    ("put", "/api/sources/demo/notes", {"json": {"path": "rides", "note": "n"}}),
+    ("post", "/api/sources/demo/refresh", {}),
+    ("get", "/api/outputs/report.csv", {}),
+]
+
+
+@pytest.mark.parametrize("method, path, kwargs", BLOCKED_IN_DEMO)
+def test_the_demo_refuses_anything_that_changes_or_reads_beyond_its_data(client, demo, demo_source,
+                                                                          method, path, kwargs):
+    response = getattr(client, method)(path, **kwargs)
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "demo.disabled"
+
+
+@pytest.mark.parametrize("method, path, kwargs", BLOCKED_IN_DEMO)
+def test_outside_the_demo_those_routes_are_open(client, demo_source, method, path, kwargs):
+    assert getattr(client, method)(path, **kwargs).status_code != 403
+
+
+def test_config_tells_the_ui_whether_it_is_the_demo(client, monkeypatch):
+    assert client.get("/api/config").json() == {"demo": False, "repo": "https://github.com/sumit-0804/omniquery"}
+    monkeypatch.setenv("OMNIQUERY_DEMO", "1")
+    assert client.get("/api/config").json()["demo"] is True
+
+
+def test_the_demo_hides_even_the_masked_database_address(client, demo, demo_source):
+    assert client.get("/api/sources").json()[0]["url"] == "hosted demo database"
+
+
+def test_the_eleventh_question_in_an_hour_is_refused_in_the_stream(client, demo):
+    # An unknown source fails fast without a model, which is enough to count requests.
+    for _ in range(10):
+        assert ask(client, source="nope")[0]["code"] == "source.not_found"
+
+    refused = ask(client, source="nope")
+    assert refused[0] == refused[0] | {"type": "error", "code": "demo.rate_limited"}
+    assert "10 questions this hour" in refused[0]["headline"]
+    assert refused[-1]["outcome"] == "error"
+
+
+def test_the_daily_cap_covers_every_visitor_together(client, demo, monkeypatch):
+    import api.app as app_module
+    from limits import parse
+
+    monkeypatch.setattr(app_module, "DEMO_PER_DAY", parse("2/day"))
+    ask(client, source="nope")
+    ask(client, source="nope")
+
+    assert "used up" in ask(client, source="nope")[0]["headline"]
+
+
+def test_outside_the_demo_there_is_no_limit(client):
+    assert all(ask(client, source="nope")[0]["code"] == "source.not_found" for _ in range(12))
+
+
+def test_the_demo_answers_etl_requests_with_a_pointer_to_the_repo(client, agents, demo, monkeypatch):
+    import dataclasses
+
+    from agents.registry import REGISTRY
+
+    class Boom:
+        def invoke(self, *args, **kwargs):
+            raise AssertionError("the ETL agent must not run in the demo")
+
+    agents(route="etl")
+    monkeypatch.setitem(REGISTRY, "etl", dataclasses.replace(REGISTRY["etl"], graph=Boom()))
+    events = ask(client, "save rides as a csv")
+
+    answer = "".join(e["text"] for e in events if e["type"] == "answer")
+    assert "turned off in this demo" in answer and "github.com/sumit-0804/omniquery" in answer
+    assert events[-1]["outcome"] == "answer"
+
+
+def test_the_demo_source_is_added_at_startup_only_when_missing(demo, monkeypatch):
+    added = []
+    monkeypatch.setenv("DEMO_DATABASE_URL", "postgresql://reader:pw@neon/rides?sslmode=require")
+
+    def fake_add(name, url, schema="public"):
+        added.append((name, url))
+        sources._save({"rides": sources._record("rides", "rides", "postgres", url=url, schema=schema,
+                                                readonly=True)})
+        return Result.ok({})
+
+    monkeypatch.setattr(sources, "add_postgres", fake_add)
+    with TestClient(create_app()):
+        pass
+    with TestClient(create_app()):
+        pass
+
+    assert added == [("rides", "postgresql://reader:pw@neon/rides?sslmode=require")]
+
+
 def test_a_write_is_canceled_not_an_error(client, agents):
     agents(replies=["UPDATE rides SET fare = 0"])
     events = ask(client, "set every fare to zero")

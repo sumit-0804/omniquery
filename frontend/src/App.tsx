@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { exampleQuestions } from "./agents";
-import { api, type Catalog as CatalogData, isApiError, type Source, WORKSPACE_ID } from "./api/client";
+import { type AppConfig, api, type Catalog as CatalogData, isApiError, type Source, WORKSPACE_ID } from "./api/client";
 import { Catalog } from "./components/Catalog";
-import { ChatHeader, Composer, type ConnectTarget, EmptyState } from "./components/Chat";
+import { ChatHeader, Composer, type ConnectTarget, DemoBanner, EmptyState } from "./components/Chat";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Rail } from "./components/Rail";
 import { Sidebar } from "./components/Sidebar";
@@ -33,7 +33,14 @@ export default function App() {
   const [outputsVersion, setOutputsVersion] = useState(0);
   const [focusTarget, setFocusTarget] = useState<ConnectTarget | null>(null);
   const [draft, setDraft] = useState("");
+  const [config, setConfig] = useState<AppConfig | null>(null);
+  const demo = config?.demo ?? false;
   const { state: run, ask, resume, play } = useRun();
+
+  useEffect(() => {
+    // Without it the app behaves as the local version, which is the safe default for the UI.
+    api.config().then(setConfig, () => setConfig(null));
+  }, []);
 
   // Dev only: ?replay=retry plays src/test/fixtures/retry.json through the real reducer.
   useEffect(() => {
@@ -60,7 +67,7 @@ export default function App() {
           setSources(askable(all));
           setLoadError(null);
         })
-        .catch(() => setLoadError("Could not reach the OmniQuery backend on 127.0.0.1:7666. Is `omniquery serve` running?")),
+        .catch(() => setLoadError("Could not reach the OmniQuery backend. Running it locally? Check that `omniquery serve` is running.")),
     [],
   );
   useEffect(() => {
@@ -96,7 +103,11 @@ export default function App() {
     };
   }, [activeId]);
 
-  const examples = useMemo(() => exampleQuestions(catalog), [catalog]);
+  // The demo turns ETL off, so it doesn't suggest a question it would refuse.
+  const examples = useMemo(
+    () => exampleQuestions(catalog).filter((e) => !(demo && e.agent === "etl")),
+    [catalog, demo],
+  );
 
   // The sidebar mounts only once it is open, so focus after that render rather than in the click.
   useEffect(() => {
@@ -137,6 +148,7 @@ export default function App() {
             loadSources();
           }}
           outputsVersion={outputsVersion}
+          demo={demo}
         />
       )}
 
@@ -149,7 +161,7 @@ export default function App() {
           wide={width >= 1160}
           lastQuestion={run.question || null}
           onClose={() => setView("chat")}
-          onSaveNote={saveNote}
+          onSaveNote={demo ? null : saveNote}
           onRerun={() => {
             setView("chat");
             submit(run.question);
@@ -158,6 +170,7 @@ export default function App() {
       ) : (
         <>
           <main className="flex min-h-0 min-w-0 flex-col bg-bg">
+            {config?.demo && <DemoBanner repo={config.repo} />}
             <ChatHeader
               source={active}
               tableCount={catalog ? catalog.tables.length : null}
@@ -185,6 +198,7 @@ export default function App() {
                   <EmptyState
                     source={active}
                     examples={examples}
+                    demo={demo}
                     onExample={setDraft}
                     onConnect={(target) => {
                       setSidebarOpen(true);

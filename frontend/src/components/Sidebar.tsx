@@ -8,6 +8,7 @@ type Props = {
   onPick: (id: string) => void;
   onAdded: (source: Source) => void;
   outputsVersion: number;
+  demo: boolean;
 };
 
 function detail(source: Source): string {
@@ -16,7 +17,7 @@ function detail(source: Source): string {
   return tables.length ? `${tables.length} table${tables.length === 1 ? "" : "s"}: ${tables.join(", ")}` : "no tables yet";
 }
 
-export function Sidebar({ sources, activeId, onPick, onAdded, outputsVersion }: Props) {
+export function Sidebar({ sources, activeId, onPick, onAdded, outputsVersion, demo }: Props) {
   const active = sources.find((s) => s.id === activeId);
   return (
     <aside className="flex min-h-0 flex-col overflow-y-auto border-r border-line bg-surface pb-5">
@@ -55,16 +56,21 @@ export function Sidebar({ sources, activeId, onPick, onAdded, outputsVersion }: 
           );
         })}
       </div>
-      {active?.readonly_role_sql && <WriteWarning snippet={active.readonly_role_sql} />}
+      {/* The hosted demo has one read-only source; adding data is for the local version. */}
+      {!demo && (
+        <>
+          {active?.readonly_role_sql && <WriteWarning snippet={active.readonly_role_sql} />}
 
-      <SectionLabel>CONNECT POSTGRES</SectionLabel>
-      <ConnectPostgres onAdded={onAdded} />
+          <SectionLabel>CONNECT POSTGRES</SectionLabel>
+          <ConnectPostgres onAdded={onAdded} />
 
-      <SectionLabel>UPLOAD FILES</SectionLabel>
-      <UploadFiles onAdded={onAdded} />
+          <SectionLabel>UPLOAD FILES</SectionLabel>
+          <UploadFiles onAdded={onAdded} />
 
-      <SectionLabel>OUTPUTS</SectionLabel>
-      <Outputs version={outputsVersion} />
+          <SectionLabel>OUTPUTS</SectionLabel>
+          <Outputs version={outputsVersion} />
+        </>
+      )}
     </aside>
   );
 }

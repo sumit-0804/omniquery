@@ -5,6 +5,7 @@ from langgraph.types import interrupt
 
 from agents.registry import AGENT_KEYS, REGISTRY
 from Models.schema import DataAgentSchema, build_router_schema
+from utils.config import REPO_URL, demo_mode
 from utils.jev_router import AMBIGUOUS, decide, route_question
 from utils.llm_pick import pick_llm, text_of
 
@@ -133,8 +134,17 @@ def explain_choice(request: str, user_question: str) -> str:
                 "chart draws the result as a picture. None of them change the data you already have.")
 
 
+DEMO_ETL_MESSAGE = (
+    "Extracts and transforms are turned off in this demo. "
+    f"Run OmniQuery locally to use them: {REPO_URL}"
+)
+
+
 def make_agent_node(key: str):
     def node(state: DataAgentSchema) -> dict:
+        # The hosted demo never fetches URLs or runs generated code on the server.
+        if key == "etl" and demo_mode():
+            return {"messages": [AIMessage(content=DEMO_ETL_MESSAGE)]}
         # Looked up at call time, so tests can swap an agent's graph.
         spec = REGISTRY[key]
         result = spec.graph.invoke(spec.build_input(state.messages[-1].content, state.source_id))

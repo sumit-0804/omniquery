@@ -7,6 +7,8 @@ const RUN_HEADLINES: Record<string, string> = {
   "run.not_paused": "That question is no longer waiting for an answer. Ask it again.",
   "source.not_found": "That data source is not saved.",
   "llm.unavailable": "Every model is busy or out of today's free budget. Try again later.",
+  "demo.rate_limited": "The demo's question limit is reached. Try again later, or run OmniQuery locally.",
+  "demo.disabled": "That is turned off in the hosted demo. Run OmniQuery locally to use it.",
 };
 
 export function errorHeadline(error: ErrorEvent): string {

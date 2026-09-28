@@ -13,6 +13,8 @@ export type Source = {
   readonly_role_sql?: string; // only for Postgres sources whose role can write
 };
 
+export type AppConfig = { demo: boolean; repo: string };
+
 export type ConnectionCheck = { ok: true; latency_ms: number; version: string; tables: number; readonly: boolean };
 export type Output = { name: string; bytes: number; table: string | null };
 
@@ -66,6 +68,7 @@ export const isApiError = (e: unknown): e is ApiError =>
   typeof e === "object" && e !== null && "code" in e && "detail" in e;
 
 export const api = {
+  config: () => request<AppConfig>("/api/config"),
   sources: () => request<Source[]>("/api/sources"),
   catalog: (sourceId: string) => request<Catalog>(`${sourcePath(sourceId)}/catalog`),
   testPostgres: (dsn: string, schema: string) =>

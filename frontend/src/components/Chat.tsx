@@ -53,16 +53,41 @@ export function ChatHeader({ source, tableCount, showToggle, onToggleSidebar, on
 
 export type ConnectTarget = "postgres" | "files";
 
+/** The hosted demo says what it is, and where the full version lives. */
+export function DemoBanner({ repo }: { repo: string }) {
+  return (
+    <div className="flex-none border-b border-[#2a3550] bg-[#131720] px-4 py-2 text-[12px] leading-[1.5] text-ink-3">
+      <span className="font-mono text-[10px] font-medium tracking-[.09em] text-accent">DEMO</span> Read-only sample
+      rideshare data, 10 questions an hour.{" "}
+      <a href={repo} target="_blank" rel="noreferrer" className="text-accent no-underline hover:underline">
+        Run it locally to use your own data →
+      </a>
+    </div>
+  );
+}
+
 type EmptyProps = {
   source: Source | null;
   examples: Example[];
+  demo?: boolean;
   onExample: (question: string) => void;
   onConnect: (target: ConnectTarget) => void;
 };
 
 const connectButton = "rounded-input border px-3.5 py-2 text-[13px] font-medium leading-none";
 
-export function EmptyState({ source, examples, onExample, onConnect }: EmptyProps) {
+export function EmptyState({ source, examples, demo = false, onExample, onConnect }: EmptyProps) {
+  if (!source && demo) {
+    // The demo's source is added at startup; if the database was unreachable there is nothing to ask.
+    return (
+      <div className="mx-auto max-w-[720px] pt-[11vh]">
+        <h1 className="text-[22px] font-semibold tracking-[-.02em]">The demo data isn't available</h1>
+        <p className="mt-[7px] max-w-[520px] leading-[1.6] text-ink-3">
+          The sample database could not be reached. Try again in a minute.
+        </p>
+      </div>
+    );
+  }
   if (!source) {
     return (
       <div className="mx-auto max-w-[720px] pt-[11vh]">

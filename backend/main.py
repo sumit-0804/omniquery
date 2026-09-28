@@ -1,5 +1,6 @@
 import argparse
 import glob
+import os
 import sys
 from pathlib import Path
 
@@ -173,19 +174,24 @@ def serve(argv: list[str]) -> int:
     import uvicorn
 
     p = argparse.ArgumentParser(prog="omniquery serve")
-    p.add_argument("--port", type=int, default=7666)
+    # Hosts like Render pass the port in $PORT and need the app on 0.0.0.0.
+    p.add_argument("--port", type=int, default=int(os.environ.get("PORT", "7666")))
+    p.add_argument("--host", default=os.environ.get("OMNIQUERY_HOST", "127.0.0.1"))
     p.add_argument("--no-browser", action="store_true")
     args = p.parse_args(argv)
 
     from api.app import FRONTEND_DIST
 
+    local = args.host in ("127.0.0.1", "localhost", "::1")
     url = f"http://127.0.0.1:{args.port}"
     if not FRONTEND_DIST.is_dir():
         print(f"No built frontend at {FRONTEND_DIST}; serving the API only ({url}/api/docs).")
-    elif not args.no_browser:
+    elif local and not args.no_browser:
         threading.Timer(1.5, webbrowser.open, [url]).start()
-    # Loopback only: nothing else on the network can reach the app.
-    uvicorn.run("api.app:app", host="127.0.0.1", port=args.port)
+    # By default loopback only: nothing else on the network can reach the app. When hosted,
+    # trust the proxy's forwarded address so the demo's rate limit sees real visitors.
+    uvicorn.run("api.app:app", host=args.host, port=args.port,
+                proxy_headers=not local, forwarded_allow_ips=None if local else "*")
     return 0
 
 

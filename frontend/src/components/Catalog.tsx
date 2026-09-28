@@ -72,7 +72,7 @@ function TableDetail({ table, schema, wide, onSave }: {
   table: CatalogTable;
   schema: string;
   wide: boolean;
-  onSave: SaveNote;
+  onSave: SaveNote | null; // null: the notes are shown but not editable (the hosted demo)
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   const span = wide ? 5 : 4;
@@ -102,7 +102,11 @@ function TableDetail({ table, schema, wide, onSave }: {
             {table.note ? "sent with every query" : "nothing taught yet"}
           </span>
         </div>
-        <NoteForm key={`${table.name}:${table.note}`} path={table.name} initial={table.note} onSave={onSave} />
+        {onSave ? (
+          <NoteForm key={`${table.name}:${table.note}`} path={table.name} initial={table.note} onSave={onSave} />
+        ) : (
+          <div className="text-[12.5px] leading-[1.5] text-ink-2">{table.note || "No note on this table."}</div>
+        )}
       </div>
 
       <div className="mt-4 overflow-x-auto rounded-card border border-line">
@@ -125,17 +129,23 @@ function TableDetail({ table, schema, wide, onSave }: {
                   <td className="px-3 font-mono whitespace-nowrap text-ink-2">{col.name}</td>
                   {/* 99% width + max-width 0 lets the note take the spare room and ellipsise. */}
                   <td className="w-[99%] max-w-0 min-w-[160px] px-2 py-1">
-                    <button
-                      type="button"
-                      aria-expanded={open}
-                      onClick={() => setEditing(open ? null : path)}
-                      title={col.note || undefined}
-                      className={`block w-full truncate rounded-chip border-0 px-2 py-1 text-left text-[12px] ${
-                        col.note ? "bg-[rgba(158,206,106,.08)] text-success" : "bg-raised-2 text-ink-5"
-                      }`}
-                    >
-                      {col.note || "+ teach the model"}
-                    </button>
+                    {onSave ? (
+                      <button
+                        type="button"
+                        aria-expanded={open}
+                        onClick={() => setEditing(open ? null : path)}
+                        title={col.note || undefined}
+                        className={`block w-full truncate rounded-chip border-0 px-2 py-1 text-left text-[12px] ${
+                          col.note ? "bg-[rgba(158,206,106,.08)] text-success" : "bg-raised-2 text-ink-5"
+                        }`}
+                      >
+                        {col.note || "+ teach the model"}
+                      </button>
+                    ) : (
+                      <div title={col.note || undefined} className={`truncate px-2 py-1 text-[12px] ${col.note ? "text-success" : "text-ink-5"}`}>
+                        {col.note || "—"}
+                      </div>
+                    )}
                   </td>
                   <td className="max-w-[150px] truncate px-3 font-mono whitespace-nowrap text-ink-4" title={col.type}>
                     {col.type}
@@ -147,7 +157,7 @@ function TableDetail({ table, schema, wide, onSave }: {
                     </td>
                   )}
                 </tr>,
-                open && (
+                open && onSave && (
                   <tr key={`${path}:edit`} className="bg-raised">
                     <td colSpan={span} className="px-3 py-3">
                       <div className="mb-1.5 text-[11.5px] text-ink-3">
@@ -177,7 +187,7 @@ type Props = {
   wide: boolean;
   lastQuestion: string | null;
   onClose: () => void;
-  onSaveNote: SaveNote;
+  onSaveNote: SaveNote | null;
   onRerun: () => void;
 };
 
@@ -191,7 +201,7 @@ export function Catalog({ gridColumn, source, catalog, error, wide, lastQuestion
   const notes = Object.keys(source.notes).length;
 
   const save: SaveNote = async (path, text) => {
-    await onSaveNote(path, text);
+    await onSaveNote?.(path, text);
     setSaved((s) => ({ path, removed: !text, n: (s?.n ?? 0) + 1 }));
   };
 
@@ -277,7 +287,7 @@ export function Catalog({ gridColumn, source, catalog, error, wide, lastQuestion
           ) : !catalog ? (
             <div className="text-ink-5">Loading the catalog…</div>
           ) : selected ? (
-            <TableDetail key={selected.name} table={selected} schema={catalog.schema} wide={wide} onSave={save} />
+            <TableDetail key={selected.name} table={selected} schema={catalog.schema} wide={wide} onSave={onSaveNote ? save : null} />
           ) : (
             <div className="text-ink-5">No table or column matches “{query}”.</div>
           )}

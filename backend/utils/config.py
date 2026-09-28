@@ -9,6 +9,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
 
+REPO_URL = "https://github.com/sumit-0804/omniquery"
+
+
+def demo_mode() -> bool:
+    """The hosted, read-only demo. Read on each call so tests can switch it."""
+    return os.environ.get("OMNIQUERY_DEMO") == "1"
+
+
 def require(name: str) -> str:
     value = os.environ.get(name)
     if not value:
