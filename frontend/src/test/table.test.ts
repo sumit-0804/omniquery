@@ -75,9 +75,9 @@ it("nextReveal steps two words at a time and ends at the text's end", () => {
 });
 
 it("keeps Windows paths intact through markdown", () => {
-  const path = String.raw`Saved to C:\Users\sumit\.omniquery\outputs\users.parquet`;
+  const path = String.raw`Saved to C:\Users\me\.omniquery\outputs\users.parquet`;
   const html = renderToStaticMarkup(createElement(Markdown, null, literalBackslashes(path)));
-  expect(html).toContain(String.raw`C:\Users\sumit\.omniquery\outputs\users.parquet`);
+  expect(html).toContain(String.raw`C:\Users\me\.omniquery\outputs\users.parquet`);
 });
 
 it("a 60-row run keeps every row, with the model's 25 marked", () => {

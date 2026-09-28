@@ -111,7 +111,7 @@
  {
   "type": "answer",
   "t": 20.891,
-  "text": "Saved users (10 rows, 15 columns) to C:\\Users\\sumit\\.omniquery\\outputs\\users.parquet. It is now a table in the workspace source.",
+  "text": "Saved users (10 rows, 15 columns) to C:\\Users\\me\\.omniquery\\outputs\\users.parquet. It is now a table in the workspace source.",
   "done": false
  },
  {
